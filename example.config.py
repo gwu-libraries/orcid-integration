@@ -1,0 +1,3 @@
+SECRET_KEY = b''
+CLIENT_ID = ''
+CLIENT_SECRET = ''
