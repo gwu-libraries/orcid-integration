@@ -8,5 +8,5 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
 4. From the command line: \
  `export FLASK_APP=orcidflask` \
  `export ORCIDFLASK_SETTINGS=/path/to/config.py`
-5. `flask run --host=0.0.0.0` (to listen on all public IP addresses) \ 
- To specify a port: `flask run --host=0.0.0.0 --port=8080`
+5. `flask run --host=0.0.0.0` (to listen on all public IP addresses) \
+To specify a port: `flask run --host=0.0.0.0 --port=8080`
