@@ -1,12 +1,12 @@
-from flask import request, url_for, redirect, session
+from flask import request, url_for, redirect, session, render_template
 from orcidflask import app
 from saml_utils import *
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 import requests
 from requests.exceptions import HTTPError
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+@app.route('/', methods=['GET', 'POST'])
+def index():
     '''
     Route handles the SSO process
     '''
@@ -67,6 +67,9 @@ def login():
 
     attributes, paint_logout = get_attributes(session)
 
+    print('Errors: ', errors)
+    print('Session: ', session)
+
     return render_template(
         'index.html',
         errors=errors,
@@ -100,8 +103,8 @@ def metadata():
     return resp
 
 
-@app.route('/')
-def index():
+@app.route('/orcid')
+def orcid_login():
     '''
     Should render homepage and if behind SSO, retrieve netID from SAML and store in a session variable.
     See the example here: https://github.com/onelogin/python3-saml/blob/master/demo-flask/index.py
