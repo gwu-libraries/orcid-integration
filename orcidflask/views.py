@@ -1,6 +1,7 @@
 from flask import request, url_for, redirect, session, render_template
 from orcidflask import app
 from saml_utils import *
+from orcid_utils import *
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 import requests
 from requests.exceptions import HTTPError
@@ -20,7 +21,8 @@ def index():
 
     # Initiating the SSO process
     if 'sso' in request.args:
-        return redirect(auth.login())
+        # Redirect to ORCID login upon successful SSO
+        return redirect(auth.login(return_to=url_for('orcid_login')))
     # Initiating the SLO process
     elif 'slo' in request.args:
         metadata = get_metadata_from_session(session)
@@ -133,8 +135,7 @@ def orcid_redirect():
         # TO DO: handle HTTP errors
         raise
     orcid_auth = response.json()
-    print(orcid_auth)
-    # TO DO: Retrieve SAML identifier from session object
+    # Get the user's ID from the SSO process
+    saml_id = session.get('samlNameId')
     # TO DO: Save to data store
-    # TO DO: return success template
-    return "Successfully authorized!"
+    return render_template('orcid_success.html', saml_id=saml_id, orcid_auth=orcid_auth)

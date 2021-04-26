@@ -21,3 +21,34 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
  `export ORCIDFLASK_SETTINGS=/path/to/config.py`
 6. `flask run --host=0.0.0.0` (to listen on all public IP addresses) \
 To specify a port: `flask run --host=0.0.0.0 --port=8080`
+   - Alternately, to test with SSO, you'll need to list on port 443. To use gunicorn and nginx, do the following:
+      1. Create SSL key and cert (either self-signed or using a certificate authority)
+      2. Install gunicorn: `pip install gunicorn`
+      3. Install nginx: `sudo apt-get install nginx`
+      4. Remove the defaul SSL configuration: 
+         ```cd /etc/nginx/sites-enabled`
+            sudo rm default
+            ```
+      5. Create a new nginx configuration to proxy to the Flask as follows:
+         ```
+            server {
+                listen 80;
+                listen [::]:80;
+                server_name gworcid-dev.wrlc.org;
+                return 302 https://$server_name$request_uri;
+            }
+            server {
+                listen 443 ssl;
+                listen [::]:443 ssl;
+                ssl_certificate /etc/ssl/certs/server.crt;
+                ssl_certificate_key /etc/ssl/private/server.key;
+                location / {
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header HOST $http_host;
+                    proxy_pass http://127.0.0.1:8080;
+                    proxy_redirect off;
+                 }
+            }
+        ```
+        6. From the command line, run `gunicorn -b 127.0.0.1:8080 orcidflask:app`
+
