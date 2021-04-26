@@ -138,4 +138,4 @@ def orcid_redirect():
     # Get the user's ID from the SSO process
     saml_id = session.get('samlNameId')
     # TO DO: Save to data store
-    return render_template('orcid_success.html', saml_id=saml_id, orcid_auth=orcid_auth)
+    return render_template('orcid_success.html', saml_id=saml_id, orcid_auth={k: v for k,v in orcid_auth.items() if not k.endswith('token')})
