@@ -45,7 +45,7 @@ def get_metadata_from_session(session):
     # SAML attribute names
     attr_names = ['samlNameId', 'samlSessionIndex', 'samlNameIdFormat', 'samlNameIdNameQualifier', 'samlNameIdSPNameQualifier']
     # parameter names used by the python3-saml auth object
-    keys = ['name_id', 'session_index', 'name_id_format', 'nq', 'spqn']
+    keys = ['name_id', 'session_index', 'name_id_format', 'nq', 'spnq']
     metadata_dict = {key: session.get(attr_name) for (key, attr_name) in zip(keys, attr_names)}
     return metadata_dict
 

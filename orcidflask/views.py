@@ -70,7 +70,6 @@ def index():
     attributes, paint_logout = get_attributes(session)
 
     print('Errors: ', errors)
-    print('Session: ', session)
 
     return render_template(
         'index.html',
