@@ -14,7 +14,10 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
     ./configure && make && make install
     ```
 3. `pip install -r requirements.txt`
-4. Copy the example configuration file and edit it to provide sensitive keys, including the SERVER_KEY, ORCID client ID and ORCID client secret. \
+4. Create your secure key and certificate for SAML encryption/decryption: `openssl req -new -x509 -days 3652 -nodes -out sp.crt -keyout sp.key`
+   - These files should go into an `orcidflask/saml/certs` directory.
+5. In the `orcidflask/saml` directory, edit the `settings.json` file to provide the metadata for your app and your identity provider, as well as the certificate from your identify provider. You can follow the example on the [python3-saml repository](https://github.com/onelogin/python3-saml).
+6. Copy the example Flask configuration file and edit it to provide sensitive keys, including the SERVER_KEY, ORCID client ID and ORCID client secret. \
  `cp example.config.py config.py`
 5. From the command line: \
  `export FLASK_APP=orcidflask` \
