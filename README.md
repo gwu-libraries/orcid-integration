@@ -50,5 +50,5 @@ To specify a port: `flask run --host=0.0.0.0 --port=8080`
                  }
             }
         ```
-      cd /opt/6. From the command line, run `gunicorn -b 127.0.0.1:8080 orcidflask:app`
+      6. From the command line, run `gunicorn -b 127.0.0.1:8080 orcidflask:app`
 
