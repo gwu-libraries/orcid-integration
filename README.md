@@ -3,7 +3,7 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
 
 1. Set up Python 3 virtual environment.
 2. To use python3-saml, it's necessary to install some dependencies. On Ubuntu, do the following:
-    - `apt-get install libxml2-dev libxmlsec1-dev libxmlsec1-openssl`
+    - `sudo apt-get install libxml2-dev libxmlsec1-dev libxmlsec1-openssl`
     - To get the latest version of LibXML2, I also had to the following:
     ```
     sudo apt-get install build-essential
@@ -50,5 +50,5 @@ To specify a port: `flask run --host=0.0.0.0 --port=8080`
                  }
             }
         ```
-      6. From the command line, run `gunicorn -b 127.0.0.1:8080 orcidflask:app`
+      cd /opt/6. From the command line, run `gunicorn -b 127.0.0.1:8080 orcidflask:app`
 
