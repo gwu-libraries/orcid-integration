@@ -6,8 +6,8 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
     - `apt-get install libxml2-dev libxmlsec1-dev libxmlsec1-openssl`
     - To get the latest version of LibXML2, I also had to the following:
     ```
-    apt-get install build-essential
-    apt-get install python3-dev
+    sudo apt-get install build-essential
+    sudo apt-get install python3-dev
     wget http://xmlsoft.org/sources/libxml2-2.9.1.tar.gz
     tar -xvf libxml2-2.9.1.tar.gz
     cd libxml2-2.9.1
@@ -50,5 +50,5 @@ To specify a port: `flask run --host=0.0.0.0 --port=8080`
                  }
             }
         ```
-        6. From the command line, run `gunicorn -b 127.0.0.1:8080 orcidflask:app`
+      6. From the command line, run `gunicorn -b 127.0.0.1:8080 orcidflask:app`
 
