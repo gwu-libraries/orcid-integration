@@ -104,7 +104,7 @@ def metadata():
     return resp
 
 
-@app.route('/orcid')
+@app.route('/orcid', methods=('GET', 'POST'))
 def orcid_login():
     '''
     Should render homepage and if behind SSO, retrieve netID from SAML and store in a session variable.
@@ -112,10 +112,15 @@ def orcid_login():
     '''
     # TO DO: Add template with button to take user to the ORCID authorization site
     # TO DO: Capture SAML identifier in session object
-    return redirect(app.config['orcid_auth_url'].format(orcid_client_id=app.config['CLIENT_ID'], 
+    if request.method == 'POST':
+        app.logger.debug(request.form)
+        scopes = ' '.join(request.form.keys())
+        return redirect(app.config['orcid_auth_url'].format(orcid_client_id=app.config['CLIENT_ID'], 
+                                                        scopes=scopes,
                                                         redirect_uri=url_for('orcid_redirect',
                                                         _scheme='https', 
                                                         _external=True)))
+    return render_template('orcid_login.html')
 
 @app.route('/orcid-redirect')
 def orcid_redirect():

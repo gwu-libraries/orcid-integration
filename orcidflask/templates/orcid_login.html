@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} My GW ORCID Integration {% endblock %}</h1>
+    <form method="post">
+        <fieldset>
+            <legend>I wish to grant GW permission to (select one or more)</legend>
+            <label for="/read-limited" class="scopes-label">
+                <input type="checkbox" name="/read-limited"></input>
+                Read public and limited visibility items in my profile.
+            </label>
+            <label for="/activities/update" class="scopes-label">
+                <input type="checkbox" name="/activities/update"></input>
+                Write, update and delete items in the affiliation, funding, works and research resources and peer-review sections of my ORCID profile.
+            </label>
+            <label for="/person/update" class="scopes-label">
+                <input type="checkbox" name="/person/update"></input>
+                Write, update and delete items in the other-names, keywords, countries, researcher-urls, websites, and personal external identifiers sections of my ORCID profile.
+            </label>
+            <button type="submit">Submit</button>
+        </fieldset>
+    </form>
+{% endblock %}
+

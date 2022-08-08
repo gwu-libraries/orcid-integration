@@ -1,0 +1,8 @@
+<html>
+    <body>
+        <p>User ID: {{ saml_id }}</p>
+        {% for key, value in orcid_auth.items() %}
+            <p> {{key}}: {{value}}</p>
+        {% endfor %}
+    </body>
+</html>
