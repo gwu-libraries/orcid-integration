@@ -113,7 +113,8 @@ def orcid_login():
     # TO DO: Add template with button to take user to the ORCID authorization site
     # TO DO: Capture SAML identifier in session object
     return redirect(app.config['orcid_auth_url'].format(orcid_client_id=app.config['CLIENT_ID'], 
-                                                        redirect_uri=url_for('orcid_redirect', 
+                                                        redirect_uri=url_for('orcid_redirect',
+                                                        _scheme='https', 
                                                         _external=True)))
 
 @app.route('/orcid-redirect')
@@ -126,9 +127,11 @@ def orcid_redirect():
     headers = {'Accept': 'application/json',
                 'Content-Type': 'application/x-www-form-urlencoded'}
     try:
+        app.logger.debug(prepare_token_payload(orcid_code))
         response = requests.post(app.config['orcid_token_url'], 
                                 headers=headers, 
                                 data=prepare_token_payload(orcid_code))
+        app.logger.debug(response.text)
         response.raise_for_status()
     except HTTPError as e:
         # TO DO: handle HTTP errors

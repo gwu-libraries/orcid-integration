@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /opt/orcid_integration
 
-COPY *.py .
+COPY *.py ./
 COPY requirements.txt .
 COPY orcidflask/*.py ./orcidflask/
 COPY orcidflask/templates ./orcidflask/templates/
