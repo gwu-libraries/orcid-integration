@@ -1,38 +1,21 @@
 # orcid-integration
 ORCID middleware to enable our researchers to designate GW as a trusted partner
 
-1. Set up Python 3 virtual environment.
-2. To use python3-saml, it's necessary to install some dependencies. On Ubuntu, do the following:
-    - `sudo apt-get install libxml2-dev libxmlsec1-dev libxmlsec1-openssl`
-    - To get the latest version of LibXML2, I also had to the following:
-    ```
-    sudo apt-get install build-essential
-    sudo apt-get install python3-dev
-    wget http://xmlsoft.org/sources/libxml2-2.9.1.tar.gz
-    tar -xvf libxml2-2.9.1.tar.gz
-    cd libxml2-2.9.1
-    ./configure && make && make install
-    ```
-3. `pip install -r requirements.txt`
-4. Create your secure key and certificate for SAML encryption/decryption: `openssl req -new -x509 -days 3652 -nodes -out sp.crt -keyout sp.key`
+## Setup 
+
+1. Create your secure key and certificate for SAML encryption/decryption: `openssl req -new -x509 -days 3652 -nodes -out sp.crt -keyout sp.key`
    - These files should go into an `orcidflask/saml/certs` directory.
-5. In the `orcidflask/saml` directory, edit the `settings.json` file to provide the metadata for your app and your identity provider, as well as the certificate from your identify provider. You can follow the example on the [python3-saml repository](https://github.com/onelogin/python3-saml).
-6. Copy the example Flask configuration file and edit it to provide sensitive keys, including the SERVER_KEY, ORCID client ID and ORCID client secret. \
+2. In the `orcidflask/saml` directory, create a `settings.json` file to provide the metadata for your app and your identity provider, as well as the certificate from your identify provider. You can follow the example on the [python3-saml repository](https://github.com/onelogin/python3-saml) or in `example-settings.json`.
+3. Copy the example Flask configuration file and edit it to provide sensitive keys, including the SERVER_KEY, ORCID client ID and ORCID client secret. 
  `cp example.config.py config.py`
-5. From the command line: \
- `export FLASK_APP=orcidflask` \
- `export ORCIDFLASK_SETTINGS=/path/to/config.py`
-6. `flask run --host=0.0.0.0` (to listen on all public IP addresses) \
-To specify a port: `flask run --host=0.0.0.0 --port=8080`
-   - Alternately, to test with SSO, you'll need to list on port 443. To use gunicorn and nginx, do the following:
+4. Bring up the Docker container(s): `docker-compose up -d`. This will install all necessary dependencies and launch the Flask app with gunicorn on port `8080`. For development, comment out the first three lines under the `volumes` section of the `flask-app` service and uncomment the line `.:/opt/orcid_integration`. This will use the local copy of the Python code.
+5. For SSL, use gunicorn with nginx:
         1. Create SSL key and cert (either self-signed or using a certificate authority)
-        2. Install gunicorn: `pip install gunicorn`
-        3. Install nginx: `sudo apt-get install nginx`
-        4. Remove the defaul SSL configuration: 
-         ```cd /etc/nginx/sites-enabled`
-            sudo rm default
-            ```
-        5. Create a new nginx configuration to proxy to the Flask as follows:
+        2. Install nginx: `sudo apt-get install nginx`
+        3. Remove the defaul SSL configuration: 
+         `cd /etc/nginx/sites-enabled`
+        `sudo rm default`
+        4. Create a new nginx configuration to proxy to the Flask app as follows:
             ```
             server {
                 listen 80;
@@ -52,5 +35,3 @@ To specify a port: `flask run --host=0.0.0.0 --port=8080`
                     proxy_redirect off;
                  }
             }```
-        6. From the command line, run `gunicorn -b 127.0.0.1:8080 orcidflask:app`
-
