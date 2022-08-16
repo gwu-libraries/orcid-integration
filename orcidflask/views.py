@@ -1,5 +1,6 @@
 from flask import request, url_for, redirect, session, render_template
-from orcidflask import app
+from orcidflask import app, db
+from orcidflask.models import Token
 from saml_utils import *
 from orcid_utils import *
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
@@ -144,5 +145,18 @@ def orcid_redirect():
     orcid_auth = response.json()
     # Get the user's ID from the SSO process
     saml_id = session.get('samlNameId')
-    # TO DO: Save to data store
+    # Get token info from the response object
+    access_token = orcid_auth['access_token']
+    refresh_token = orcid_auth['refresh_token']
+    expires_in = orcid_auth['expires_in']
+    token_scope = orcid_auth['scope']
+    orcid = orcid_auth['orcid']
+
+    # Save to data store
+    token = Token(userId = saml_id, access_token = access_token, refresh_token = refresh_token,
+            expires_in = expires_in, token_scope = token_scope, orcid = orcid)
+    db.session.add(token)
+    db.session.commit()
+
+    # return success page
     return render_template('orcid_success.html', saml_id=saml_id, orcid_auth={k: v for k,v in orcid_auth.items() if not k.endswith('token')})
