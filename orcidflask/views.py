@@ -137,7 +137,6 @@ def orcid_redirect():
         response = requests.post(app.config['orcid_token_url'], 
                                 headers=headers, 
                                 data=prepare_token_payload(orcid_code))
-        app.logger.debug(response.text)
         response.raise_for_status()
     except HTTPError as e:
         # TO DO: handle HTTP errors
