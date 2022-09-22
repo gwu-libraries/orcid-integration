@@ -1,6 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
+import click
+from orcid_utils import create_encryption_key
 
 app = Flask(__name__)
 # load default configs from default_settings.py
@@ -23,3 +25,14 @@ db = SQLAlchemy(app)
 db.create_all()
 
 import orcidflask.views
+
+@app.cli.command('create-secret-key')
+@click.argument('file')
+def create_secret_key(file):
+    '''
+    Creates a new database encryption key and saves to the provided file path.
+    '''
+    key = create_encryption_key()
+    with open(file, 'wb') as f:
+        f.write(key)
+    
