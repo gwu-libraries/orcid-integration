@@ -18,3 +18,11 @@ def create_encryption_key():
     '''
     key = Fernet.generate_key()
     return key
+
+def load_encryption_key(file):
+    '''
+    Loads a secret key as binary from the provided file, for use in encrypting database values.
+    '''
+    with open(file, 'rb') as f:
+        key = f.read()
+    return key

@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
 import click
-from orcid_utils import create_encryption_key
+from orcid_utils import create_encryption_key, load_encryption_key
 
 app = Flask(__name__)
 # load default configs from default_settings.py
@@ -21,6 +21,8 @@ postgres_port = os.getenv('POSTGRES_PORT')
 postgres_db = os.getenv('POSTGRES_DB')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{postgres_user}:{postgres_pwd}@{postgres_db_host}:{postgres_port}/{postgres_db}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db_key_file = os.getenv('DB_ENCRYPTION_FILE')
+app.config['db_encryption_key'] = load_encryption_key(db_key_file)
 db = SQLAlchemy(app)
 db.create_all()
 
@@ -35,4 +37,10 @@ def create_secret_key(file):
     key = create_encryption_key()
     with open(file, 'wb') as f:
         f.write(key)
-    
+
+@app.cli.command('reset-db')
+def reset_db():
+    '''
+    Resets the associated database by dropping all tables. Warning: for development purposes only. Do not run on a production instance without first backing up the database, as this command will result in the loss of all data.
+    '''
+    db.drop_all()
