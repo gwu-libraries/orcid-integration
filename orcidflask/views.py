@@ -107,15 +107,16 @@ def orcid_login():
     # If no SAML attributes, redirect for SSO
     if not session.get('samlNameId'):
         return redirect(url_for('index'))
-
     if request.method == 'POST':
-        app.logger.debug(request.form)
         scopes = ' '.join(request.form.keys())
+        # Get user data from SAML for registration form
+        saml_user_data = extract_saml_user_data(session)
         return redirect(app.config['orcid_auth_url'].format(orcid_client_id=app.config['CLIENT_ID'], 
                                                         scopes=scopes,
                                                         redirect_uri=url_for('orcid_redirect',
                                                         _scheme='https', 
-                                                        _external=True)))
+                                                        _external=True),
+                                                        **saml_user_data))
     return render_template('orcid_login.html')
 
 @app.route('/orcid-redirect')
