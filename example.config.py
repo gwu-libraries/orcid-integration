@@ -1,3 +1,4 @@
 SECRET_KEY = b''
 CLIENT_ID = ''
 CLIENT_SECRET = ''
+SLO_REDIRECT = ''

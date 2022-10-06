@@ -68,19 +68,12 @@ def index():
         elif auth.get_settings().is_debug_active():
             error_reason = auth.get_last_error_reason()
 
-    attributes, paint_logout = get_attributes(session)
+    # Redirect for login if no params provided
+    else:
+        return redirect(auth.login(return_to=url_for('orcid_login')))
 
-    print('Errors: ', errors)
-
-    return render_template(
-        'index.html',
-        errors=errors,
-        error_reason=error_reason,
-        not_auth_warn=not_auth_warn,
-        success_slo=success_slo,
-        attributes=attributes,
-        paint_logout=paint_logout
-    )
+    # Redirect from logout process
+    return redirect(app.config['SLO_REDIRECT'])
 
 @app.route('/attrs/')
 def attrs():
@@ -111,8 +104,10 @@ def orcid_login():
     Should render homepage and if behind SSO, retrieve netID from SAML and store in a session variable.
     See the example here: https://github.com/onelogin/python3-saml/blob/master/demo-flask/index.py
     '''
-    # TO DO: Add template with button to take user to the ORCID authorization site
-    # TO DO: Capture SAML identifier in session object
+    # If no SAML attributes, redirect for SSO
+    if not session.get('samlNameId'):
+        return redirect(url_for('index'))
+
     if request.method == 'POST':
         app.logger.debug(request.form)
         scopes = ' '.join(request.form.keys())
@@ -128,19 +123,25 @@ def orcid_redirect():
     '''
     Redirect route that retrieves the one-time code from ORCID after user logs in and approves.
     '''
-    # TO DO: Check for error/access denied
+    # Redirect here for access denied page
+    if request.args.get('error') == 'access_denied':
+        return render_template('orcid_denied.html') 
+    
+    elif request.args.get('error'):
+        app.logger.error(request.args.get('error'))
+        return render_template('oauth_error.html')
+
     orcid_code = request.args.get('code')
     headers = {'Accept': 'application/json',
                 'Content-Type': 'application/x-www-form-urlencoded'}
     try:
-        app.logger.debug(prepare_token_payload(orcid_code))
         response = requests.post(app.config['orcid_token_url'], 
                                 headers=headers, 
                                 data=prepare_token_payload(orcid_code))
         response.raise_for_status()
     except HTTPError as e:
-        # TO DO: handle HTTP errors
-        raise
+        app.logger.error(f'HTTPError {response.status_code}; Message {response.text}')
+        return render_template('oauth_error.html')
     orcid_auth = response.json()
     # Get the user's ID from the SSO process
     saml_id = session.get('samlNameId')
