@@ -70,7 +70,8 @@ def index():
 
     # Redirect for login if no params provided
     else:
-        return redirect(auth.login(return_to=url_for('orcid_login')))
+        # Remove the scopes param in order to solicit scopes from users
+        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited')))
 
     # Redirect from logout process
     return redirect(app.config['SLO_REDIRECT'])
@@ -104,11 +105,15 @@ def orcid_login():
     Should render homepage and if behind SSO, retrieve netID from SAML and store in a session variable.
     See the example here: https://github.com/onelogin/python3-saml/blob/master/demo-flask/index.py
     '''
+    scopes = request.args.get('scopes')
     # If no SAML attributes, redirect for SSO
     if not session.get('samlNameId'):
         return redirect(url_for('index'))
-    if request.method == 'POST':
-        scopes = ' '.join(request.form.keys())
+    # If the scopes param is part of the request, we're not using the form
+    elif scopes or request.method == 'POST':
+        # Get the scopes from the form is not part of the URL
+        if not scopes:
+            scopes = ' '.join(request.form.keys())
         # Get user data from SAML for registration form
         saml_user_data = extract_saml_user_data(session)
         return redirect(app.config['orcid_auth_url'].format(orcid_client_id=app.config['CLIENT_ID'], 
@@ -117,7 +122,9 @@ def orcid_login():
                                                         _scheme='https', 
                                                         _external=True),
                                                         **saml_user_data))
-    return render_template('orcid_login.html')
+    # Used when not passing in scopes from the SLO process (i.e., when getting from the user)
+    else:   
+        return render_template('orcid_login.html')
 
 @app.route('/orcid-redirect')
 def orcid_redirect():
@@ -126,12 +133,12 @@ def orcid_redirect():
     '''
     # Redirect here for access denied page
     if request.args.get('error') == 'access_denied':
-        return render_template('orcid_denied.html') 
+        return redirect(app.config['ORCID_FAILURE_URL'])
     
     elif request.args.get('error'):
-        app.logger.error(request.args.get('error'))
+        app.logger.error(f'OAuth Error {request.args.get("error")};')
         return render_template('oauth_error.html')
-
+        
     orcid_code = request.args.get('code')
     headers = {'Accept': 'application/json',
                 'Content-Type': 'application/x-www-form-urlencoded'}
@@ -159,5 +166,6 @@ def orcid_redirect():
     db.session.add(token)
     db.session.commit()
 
-    # return success page
-    return render_template('orcid_success.html', saml_id=saml_id, orcid_auth={k: v for k,v in orcid_auth.items() if not k.endswith('token')})
+    # return success page - testing only
+    #return render_template('orcid_success.html', saml_id=saml_id, orcid_auth={k: v for k,v in orcid_auth.items() if not k.endswith('token')})
+    return redirect(app.config['ORCID_SUCCESS_URL'])
