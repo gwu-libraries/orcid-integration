@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
 import click
-from orcid_utils import create_encryption_key, load_encryption_key
+from orcid_utils import load_encryption_key, new_encryption_key
 
 app = Flask(__name__)
 # load default configs from default_settings.py
@@ -33,11 +33,9 @@ import orcidflask.views
 @click.argument('file')
 def create_secret_key(file):
     '''
-    Creates a new database encryption key and saves to the provided file path.
+    Creates a new database encryption key and saves to the provided file path. Will not overwrite the existing file, if it exists.
     '''
-    key = create_encryption_key()
-    with open(file, 'wb') as f:
-        f.write(key)
+    store_encryption_key(file)
 
 @app.cli.command('reset-db')
 def reset_db():
