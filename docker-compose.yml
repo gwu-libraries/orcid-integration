@@ -27,4 +27,5 @@ services:
       #- ./orcidflask/saml/certs:/opt/orcid_integration/orcidflask/saml/certs
       #- ./orcidflask/saml/settings.json:/opt/orcid_integration/orcidflask/saml/settings.json
       #- ./config.py:/opt/orcid_integration/config.py
+      #- ./orcidflask/db:/opt/orcid_integration/orcidflask/db
       - .:/opt/orcid_integration
