@@ -24,8 +24,7 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - DB_ENCRYPTION_FILE=${DB_ENCRYPTION_FILE}
     volumes:
-      #- ./orcidflask/saml/certs:/opt/orcid_integration/orcidflask/saml/certs
-      #- ./orcidflask/saml/settings.json:/opt/orcid_integration/orcidflask/saml/settings.json
+      #- ./orcidflask/saml:/opt/orcid_integration/orcidflask/saml
       #- ./config.py:/opt/orcid_integration/config.py
       #- ./orcidflask/db:/opt/orcid_integration/orcidflask/db
       - .:/opt/orcid_integration

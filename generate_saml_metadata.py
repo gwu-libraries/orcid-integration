@@ -1,7 +1,7 @@
 import os
 from onelogin.saml2.settings import OneLogin_Saml2_Settings
 
-saml_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'saml')
+saml_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'orcidflask/saml')
 
 def get_metadata():
     settings = OneLogin_Saml2_Settings(custom_base_path=saml_path)
