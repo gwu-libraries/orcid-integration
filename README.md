@@ -12,8 +12,8 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
 5. Bring up the Docker container(s): `docker-compose up -d`. This will install all necessary dependencies and launch the Flask app with gunicorn on port `8080`. For development, comment out the first three lines under the `volumes` section of the `flask-app` service and uncomment the line `.:/opt/orcid_integration`. This will use the local copy of the Python code.
 6. When the Flask app starts up, it will check for the presence of a database encryption key file (as specified in `example.env`). If the file is not present, it will create a new database encryption key. **Be careful with this key.** Once the data has been encrypted using it, the key is necessary to decrypt the data again. Loss of the key means loss of the data.
 7. The postgres container will store data outside of the container, in the `./data` directory.
-  - When first run, postgres will set the permissions on this directory to a system user.
-  - To avoid having the reset permissions on `./data` every time you start up the container, **after starting the container the first time**, modify the `db` service in `docker-compose.yml` to include the following line (where `UID` and `GID` are the system ID's of the user and group to which you want to assign ownership of the `./data` directory):
+    - When first run, postgres will set the permissions on this directory to a system user.
+    - To avoid having the reset permissions on `./data` every time you start up the container, **after starting the container the first time**, modify the `db` service in `docker-compose.yml` to include the following line (where `UID` and `GID` are the system ID's of the user and group to which you want to assign ownership of the `./data` directory):
      ```
      user: "UID:GID"
      ```
