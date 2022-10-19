@@ -11,6 +11,7 @@ app.config.from_object('orcidflask.default_settings')
 app.config.from_envvar('ORCIDFLASK_SETTINGS')
 # Personal attributes from SAML metadata definitions
 app.config['orcid_auth_url'] = 'https://sandbox.orcid.org/oauth/authorize?client_id={orcid_client_id}&response_type=code&scope={scopes}&redirect_uri={redirect_uri}&family_names={lastname}&given_names={firstname}&email={emailaddress}'
+app.config['orcid_register_url'] = 'https://sandbox.orcid.org/register?client_id={orcid_client_id}&response_type=code&scope={scopes}&redirect_uri={redirect_uri}&family_names={lastname}&given_names={firstname}&email={emailaddress}'
 app.config['orcid_token_url'] = 'https://sandbox.orcid.org/oauth/token'
 app.config['SAML_PATH'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'saml')
 app.secret_key = app.config['SECRET_KEY']

@@ -19,11 +19,12 @@ def index():
     success_slo = False
     attributes = False
     paint_logout = False
-
+    # Flag in URL params for registering new users
+    register = 'register' in request.args
     # Initiating the SSO process
     if 'sso' in request.args:
         # Redirect to ORCID login upon successful SSO
-        return redirect(auth.login(return_to=url_for('orcid_login')))
+        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register)))
     # Initiating the SLO process
     elif 'slo' in request.args:
         metadata = get_metadata_from_session(session)
@@ -71,7 +72,7 @@ def index():
     # Redirect for login if no params provided
     else:
         # Remove the scopes param in order to solicit scopes from users
-        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited')))
+        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register)))
 
     # Redirect from logout process
     return redirect(app.config['SLO_REDIRECT'])
@@ -106,6 +107,7 @@ def orcid_login():
     See the example here: https://github.com/onelogin/python3-saml/blob/master/demo-flask/index.py
     '''
     scopes = request.args.get('scopes')
+    register = request.args.get('register')
     # If no SAML attributes, redirect for SSO
     if not session.get('samlNameId'):
         return redirect(url_for('index'))
@@ -116,7 +118,11 @@ def orcid_login():
             scopes = ' '.join(request.form.keys())
         # Get user data from SAML for registration form
         saml_user_data = extract_saml_user_data(session)
-        return redirect(app.config['orcid_auth_url'].format(orcid_client_id=app.config['CLIENT_ID'], 
+        if register == 'True':
+            orcid_auth_url = app.config['orcid_register_url']
+        else:
+            orcid_auth_url = app.config['orcid_auth_url']
+        return redirect(orcid_auth_url.format(orcid_client_id=app.config['CLIENT_ID'], 
                                                         scopes=scopes,
                                                         redirect_uri=url_for('orcid_redirect',
                                                         _scheme='https', 
