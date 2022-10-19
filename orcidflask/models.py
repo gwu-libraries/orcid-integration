@@ -41,3 +41,13 @@ class Token(db.Model):
     def __repr__(self):
         return '<User %r, access_token=%r, token_scope=%r, orcid=%r' % \
                 (self.userId, self.access_token, self.token_scope, self.orcid)
+    
+    def to_dict(self):
+        '''
+        Returns the record as a Python dict
+        '''
+        record = {column.name: getattr(self, column.name) 
+                for column in self.__table__.columns}
+        # Convert timestamp to string
+        record['timestamp'] = record['timestamp'].isoformat()
+        return record

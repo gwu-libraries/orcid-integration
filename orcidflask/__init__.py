@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 import click
 from orcid_utils import load_encryption_key, new_encryption_key
+import json
 
 app = Flask(__name__)
 # load default configs from default_settings.py
@@ -29,6 +30,7 @@ db = SQLAlchemy(app)
 db.create_all()
 
 import orcidflask.views
+from orcidflask.models import Token
 
 @app.cli.command('create-secret-key')
 @click.argument('file')
@@ -44,3 +46,16 @@ def reset_db():
     Resets the associated database by dropping all tables. Warning: for development purposes only. Do not run on a production instance without first backing up the database, as this command will result in the loss of all data.
     '''
     db.drop_all()
+
+@app.cli.command('serialize-db')
+@click.argument('file', type=click.File('w'))
+def serialize_db(file):
+    '''
+    Serializes the database as a JSON dump. Argument should be the path to a file, preferably in a volume mapped to the container, such as /opt/orcid_integration/data
+    '''
+    # get all records from the database
+    records = Token.query.all()
+    # convert to Python dicts
+    records = [record.to_dict() for record in records] 
+    json.dump(records, file)
+    

@@ -49,3 +49,7 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
                     proxy_redirect off;
                  }
             }```
+10. To quickly serialize the database as a JSON file, you can run the following command (if outside the container), providing the path to a file in a mounted volume:
+    ```
+    docker exec -it orcid-integration_flask-app_1 flask serialize-db ./data/token-dump.json
+    ```
