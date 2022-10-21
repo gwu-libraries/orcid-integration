@@ -117,7 +117,7 @@ def orcid_login():
         if not scopes:
             scopes = ' '.join(request.form.keys())
         # Get user data from SAML for registration form
-        saml_user_data = extract_saml_user_data(session)
+        saml_user_data = extract_saml_user_data(session, populate=app.config['PREFILL_REGISTRATION'])
         if register == 'True':
             orcid_auth_url = app.config['orcid_register_url']
         else:

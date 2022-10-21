@@ -13,14 +13,15 @@ def prepare_token_payload(code: str):
             'code': code,
             'redirect_uri': url_for('orcid_redirect', _external=True, _scheme='https')}
 
-def extract_saml_user_data(session):
+def extract_saml_user_data(session, populate=True):
     '''
     Extracts name and email attributes from the samlUserData object.
     :param session: a Flask session object
+    :param populate: set to False to turn off this feature (returns attributes mapped to empty strings)
     '''
     saml_attrs = ['emailaddress', 'firstname', 'lastname']
     saml_data = {}
-    if 'samlUserdata' in session:
+    if 'samlUserdata' in session and populate:
         user_data = session['samlUserdata']
         for saml_attr in saml_attrs:
             value = user_data.get(saml_attr)
@@ -28,6 +29,8 @@ def extract_saml_user_data(session):
             if value:
                 value = value[0]
             saml_data[saml_attr] = value
+    else:
+        saml_data = {s: '' for s in saml_attrs}
     return saml_data
 
 def new_encryption_key(file, replace=False):
