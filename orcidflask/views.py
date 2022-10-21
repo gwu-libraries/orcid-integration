@@ -110,7 +110,7 @@ def orcid_login():
     register = request.args.get('register')
     # If no SAML attributes, redirect for SSO
     if not session.get('samlNameId'):
-        return redirect(url_for('index', _external=True))
+        return redirect(url_for('index', _external=True, _scheme='https'))
     # If the scopes param is part of the request, we're not using the form
     elif scopes or request.method == 'POST':
         # Get the scopes from the form is not part of the URL
