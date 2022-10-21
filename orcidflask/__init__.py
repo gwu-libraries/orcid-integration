@@ -11,7 +11,7 @@ app.config.from_object('orcidflask.default_settings')
 # load sensitive config settings 
 app.config.from_envvar('ORCIDFLASK_SETTINGS')
 # Set the ORCID URL based on the setting in default_settings.py
-if app.config['ORCID_SANDBOX']:
+if os.getenv('ORCID_SERVER') == 'sandbox':
     base_url = 'https://sandbox.orcid.org'
 else:
     base_url = 'https://orcid.org'

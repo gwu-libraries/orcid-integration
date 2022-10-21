@@ -1,2 +1,1 @@
 DEBUG = True
-ORCID_SANDBOX = True
