@@ -24,7 +24,7 @@ def index():
     # Initiating the SSO process
     if 'sso' in request.args:
         # Redirect to ORCID login upon successful SSO
-        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register)))
+        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register, _external=True)))
     # Initiating the SLO process
     elif 'slo' in request.args:
         metadata = get_metadata_from_session(session)
@@ -72,7 +72,7 @@ def index():
     # Redirect for login if no params provided
     else:
         # Remove the scopes param in order to solicit scopes from users
-        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register)))
+        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register, _external=True)))
 
     # Redirect from logout process
     return redirect(app.config['SLO_REDIRECT'])
@@ -110,7 +110,7 @@ def orcid_login():
     register = request.args.get('register')
     # If no SAML attributes, redirect for SSO
     if not session.get('samlNameId'):
-        return redirect(url_for('index'))
+        return redirect(url_for('index', _external=True))
     # If the scopes param is part of the request, we're not using the form
     elif scopes or request.method == 'POST':
         # Get the scopes from the form is not part of the URL
