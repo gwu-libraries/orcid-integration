@@ -24,6 +24,7 @@ def index():
     # Initiating the SSO process
     if 'sso' in request.args:
         # Redirect to ORCID login upon successful SSO
+        app.logger.debug(url_for('orcid_login', scopes='/read-limited', register=register, _external=True)))
         return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register, _external=True)))
     # Initiating the SLO process
     elif 'slo' in request.args:
