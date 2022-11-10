@@ -23,8 +23,9 @@ services:
       - POSTGRES_DB_HOST=${POSTGRES_DB_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - DB_ENCRYPTION_FILE=${DB_ENCRYPTION_FILE}
+      - ORCID_SERVER
     volumes:
-      #- ./orcidflask/saml:/opt/orcid_integration/orcidflask/saml
-      #- ./config.py:/opt/orcid_integration/config.py
-      #- ./orcidflask/db:/opt/orcid_integration/orcidflask/db
-      - .:/opt/orcid_integration
+      - ./orcidflask/saml:/opt/orcid_integration/orcidflask/saml
+      - ./config.py:/opt/orcid_integration/config.py
+      - ./orcidflask/db:/opt/orcid_integration/orcidflask/db
+      #- .:/opt/orcid_integration

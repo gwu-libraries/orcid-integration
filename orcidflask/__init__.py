@@ -3,15 +3,22 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 import click
 from orcid_utils import load_encryption_key, new_encryption_key
+import json
 
 app = Flask(__name__)
 # load default configs from default_settings.py
 app.config.from_object('orcidflask.default_settings')
 # load sensitive config settings 
 app.config.from_envvar('ORCIDFLASK_SETTINGS')
+# Set the ORCID URL based on the setting in default_settings.py
+if os.getenv('ORCID_SERVER') == 'sandbox':
+    base_url = 'https://sandbox.orcid.org'
+else:
+    base_url = 'https://orcid.org'
 # Personal attributes from SAML metadata definitions
-app.config['orcid_auth_url'] = 'https://sandbox.orcid.org/oauth/authorize?client_id={orcid_client_id}&response_type=code&scope={scopes}&redirect_uri={redirect_uri}&family_names={lastname}&given_names={firstname}&email={emailaddress}'
-app.config['orcid_token_url'] = 'https://sandbox.orcid.org/oauth/token'
+app.config['orcid_auth_url'] = base_url + '/oauth/authorize?client_id={orcid_client_id}&response_type=code&scope={scopes}&redirect_uri={redirect_uri}&family_names={lastname}&given_names={firstname}&email={emailaddress}'
+app.config['orcid_register_url'] = base_url + '/register?client_id={orcid_client_id}&response_type=code&scope={scopes}&redirect_uri={redirect_uri}&family_names={lastname}&given_names={firstname}&email={emailaddress}'
+app.config['orcid_token_url'] = base_url + '/oauth/token'
 app.config['SAML_PATH'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'saml')
 app.secret_key = app.config['SECRET_KEY']
 
@@ -28,6 +35,7 @@ db = SQLAlchemy(app)
 db.create_all()
 
 import orcidflask.views
+from orcidflask.models import Token
 
 @app.cli.command('create-secret-key')
 @click.argument('file')
@@ -43,3 +51,16 @@ def reset_db():
     Resets the associated database by dropping all tables. Warning: for development purposes only. Do not run on a production instance without first backing up the database, as this command will result in the loss of all data.
     '''
     db.drop_all()
+
+@app.cli.command('serialize-db')
+@click.argument('file', type=click.File('w'))
+def serialize_db(file):
+    '''
+    Serializes the database as a JSON dump. Argument should be the path to a file, preferably in a volume mapped to the container, such as /opt/orcid_integration/data
+    '''
+    # get all records from the database
+    records = Token.query.all()
+    # convert to Python dicts
+    records = [record.to_dict() for record in records] 
+    json.dump(records, file)
+    
