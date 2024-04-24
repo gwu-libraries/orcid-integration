@@ -19,8 +19,8 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
      ```
 8. If you need to provide an XML file to your SAML IdP, with the `flask-app` container running, do the following:
     ```
-    docker exec -it orcid-integration_flask-app_1 /bin/bash
-    python generate_saml_metadata.xml
+    docker exec -it orcid-integration-flask-app-1 /bin/bash
+    python generate_saml_metadata.py
     ```
     The SAML metadata file should be written to the `orcidflask/saml` directory (bind-mounted outside the container).
 9. For SSL, use gunicorn with nginx:
