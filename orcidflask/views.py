@@ -1,4 +1,4 @@
-from flask import request, url_for, redirect, session, render_template
+from flask import request, url_for, redirect, session, render_template, make_response
 from orcidflask import app, db
 from orcidflask.models import Token
 from saml_utils import *
@@ -86,8 +86,7 @@ def attrs():
 
 @app.route('/metadata/')
 def metadata():
-    req = prepare_flask_request(request)
-    auth = init_saml_auth(req)
+    auth, auth_req = init_saml_auth(request)
     settings = auth.get_settings()
     metadata = settings.get_sp_metadata()
     errors = settings.validate_metadata(metadata)
