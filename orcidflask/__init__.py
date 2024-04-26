@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 import os
 import click
 from orcid_utils import load_encryption_key, new_encryption_key
@@ -32,7 +33,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db_key_file = os.getenv('DB_ENCRYPTION_FILE')
 app.config['db_encryption_key'] = load_encryption_key(db_key_file)
 db = SQLAlchemy(app)
-db.create_all()
+migrate = Migrate(app, db)
 
 import orcidflask.views
 from orcidflask.models import Token
