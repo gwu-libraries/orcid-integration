@@ -21,6 +21,11 @@ ORCID middleware to enable our researchers to designate GW as a trusted partner
      ```
      user: "UID:GID"
      ```
+    - To setup the database, run the migrations: 
+        ```
+        docker exec -it orcid-integration-flask-app-1 /bin/bash
+        flask db upgrade
+        ```
 8. If you need to provide an XML file to your SAML IdP, with the `flask-app` container running, do the following:
     ```
     docker exec -it orcid-integration-flask-app-1 /bin/bash
