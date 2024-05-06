@@ -7,6 +7,7 @@ Create Date: 2024-04-26 13:11:48.534267
 """
 from alembic import op
 import sqlalchemy as sa
+from orcidflask.models import EncryptedValue
 
 
 # revision identifiers, used by Alembic.
@@ -21,8 +22,8 @@ def upgrade():
     op.create_table('token',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('userId', sa.String(length=80), nullable=False),
-    sa.Column('access_token', orcidflask.models.EncryptedValue(), nullable=False),
-    sa.Column('refresh_token', orcidflask.models.EncryptedValue(), nullable=False),
+    sa.Column('access_token', EncryptedValue(), nullable=False),
+    sa.Column('refresh_token', EncryptedValue(), nullable=False),
     sa.Column('expires_in', sa.Integer(), nullable=False),
     sa.Column('token_scope', sa.String(length=80), nullable=False),
     sa.Column('orcid', sa.String(length=80), nullable=False),

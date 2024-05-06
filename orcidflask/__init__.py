@@ -21,8 +21,8 @@ app.config['orcid_auth_url'] = base_url + '/oauth/authorize?client_id={orcid_cli
 app.config['orcid_register_url'] = base_url + '/oauth/authorize?client_id={orcid_client_id}&response_type=code&scope={scopes}&redirect_uri={redirect_uri}&family_names={lastname}&given_names={firstname}&email={emailaddress}&show_login=false'
 app.config['orcid_token_url'] = base_url + '/oauth/token'
 app.config['SAML_PATH'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'saml')
+app.config["SESSION_COOKIE_DOMAIN"] = app.config["SERVER_NAME"]
 app.secret_key = app.config['SECRET_KEY']
-
 postgres_user = os.getenv('POSTGRES_USER')
 postgres_pwd = os.getenv('POSTGRES_PASSWORD')
 postgres_db_host = os.getenv('POSTGRES_DB_HOST')
