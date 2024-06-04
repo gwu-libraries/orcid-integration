@@ -24,7 +24,7 @@ def index():
     # Initiating the SSO process
     if 'sso' in request.args:
         # Redirect to ORCID login upon successful SSO
-        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register, _external=True, _scheme='https')))
+        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited /activities/update', register=register, _external=True, _scheme='https')))
     # Initiating the SLO process
     elif 'slo' in request.args:
         metadata = get_metadata_from_session(session)
@@ -72,7 +72,7 @@ def index():
     # Redirect for login if no params provided
     else:
         # Remove the scopes param in order to solicit scopes from users
-        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited', register=register, _external=True, _scheme='https')))
+        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited /activities/update', register=register, _external=True, _scheme='https')))
 
     # Redirect from logout process
     return redirect(app.config['SLO_REDIRECT'])
