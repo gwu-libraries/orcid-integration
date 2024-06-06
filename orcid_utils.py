@@ -1,7 +1,7 @@
 from flask import current_app, url_for
 from cryptography.fernet import Fernet
 from os.path import exists
-    
+
 def prepare_token_payload(code: str):
     '''
     :param code: the code returned from ORCID after the user authorizes our application.
