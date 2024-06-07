@@ -1,0 +1,85 @@
+{
+  "title": {
+    "title": {
+      "value": "{{ work.title }}"
+    },
+    "subtitle": {
+      "value": "{{ work.subtitle }}"
+    },
+    "translated-title": {
+      "value": "{{ work.translated_title }}",
+      "language-code": "{{ work.language_code }}"
+    }
+  },
+  "journal-title": {
+    "value": "{{ work.container }}"
+  },
+  "short-description": "{{ work.description }}",
+  "citation": {
+    "citation-type": "bibtex",
+    "citation-value": "{{ work.citation }}"
+  },
+  "type": " {{ work.work_type }}",
+  "publication-date": {
+    "year": {
+      "value": "{{ work.pub_year }}"
+    },
+    "month": {
+      "value": "{{ work.pub_month }}"
+    },
+    "day": {
+      "value": "{{ work.pub_day }}"
+    }
+  },
+  "external-ids": {
+    "external-id": [
+      {
+        "external-id-type": "doi",
+        "external-id-value": "{{ work.doi }}",
+
+        "external-id-url": {
+          "value": "{{ work.doi_url }}"
+        },
+        "external-id-relationship": "part-of"
+      },
+      {
+        "external-id-type": "doi",
+        "external-id-value": "work:doi",
+        "external-id-url": {
+          "value": "http://orcid.org"
+        },
+        "external-id-relationship": "self"
+      }
+    ]
+  },
+  "url": {
+    "value": "{{ work.url }}"
+  },
+  "contributors": {
+    "contributor": [
+      {% for contributor in work.contributors %}
+        {
+          {% if contributor.orcid %}
+          "contributor-orcid": {
+            "uri": "{{ contributor.orcid_uri }}",
+            "path": "{{ contributor.orcid }}",
+            "host": "orcid.org"
+          },
+          {% endif %}
+          "credit-name": {
+            "value": "{{ contributor.name }}"
+          },
+          "contributor-email": "{{ contributor.email }}",
+          "contributor-attributes": {
+            "contributor-sequence": "{{ contributor.sequence }}",
+            "contributor-role": "{{ contributor.role }}"
+          }
+        }{{ ", " if not loop.last else "" }}
+      {% endfor %}
+    ]
+  },
+  "language-code": "en",
+  "country": {
+    "value": "US"
+  }
+}
