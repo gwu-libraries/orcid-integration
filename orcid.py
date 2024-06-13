@@ -1,7 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 import re
 from jinja2 import Environment, PackageLoader
+import uuid
 
 def finalize(value):
     '''
@@ -33,7 +34,10 @@ class ORCiDWork:
     pub_year: str                           # publication year
     pub_month: Optional[str] = None         # possible publication month
     pub_day: Optional[str] = None           # possible day of publication
-    doi: Optional[str] = None               # possible DOI
+    external_id_type: Optional[str] = None  # possible external ID type, from among those recognized by the ORCiD API
+    external_id: Optional[str] = None       # possible external ID, e.g., DOI
+    external_id_url: Optional[str] = None   # possible URL (for DOI)
+    _work_id: uuid.UUID = field(default_factory=uuid.uuid4) # internal ID for works; used in creating ORCiD records without DOI's
 
     template = ENV.get_template('work-full-3.0.json') # template for works
 
@@ -43,6 +47,6 @@ class ORCiDWork:
         authors = re.split(r',|&|\s+with\s+|\s+and\s+', authors_str, flags=re.IGNORECASE)
         # Strip leading/trailing whitespace from each name and convert to title case if necessary
         return [author.strip() for author in authors if author.strip()]
-    
+      
     def create_json(self):
        return ORCiDWork.template.render(work=self) 

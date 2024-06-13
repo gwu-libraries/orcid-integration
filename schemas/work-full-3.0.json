@@ -34,19 +34,11 @@
   "external-ids": {
     "external-id": [
       {
-        "external-id-type": "doi",
-        "external-id-value": "{{ work.doi }}",
+        "external-id-type": "{{ work.external_id_type if work.external_id_type else 'source-work-id' }}",
+        "external-id-value": "{{ work.external_id if work.external_id else work._work_id }}",
 
         "external-id-url": {
-          "value": "{{ work.doi_url }}"
-        },
-        "external-id-relationship": "part-of"
-      },
-      {
-        "external-id-type": "doi",
-        "external-id-value": "work:doi",
-        "external-id-url": {
-          "value": "http://orcid.org"
+          "value": "{{ work.external_id_url }}"
         },
         "external-id-relationship": "self"
       }
