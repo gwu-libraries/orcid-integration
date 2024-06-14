@@ -1,6 +1,6 @@
 import pytest
 from orcid.lyterati_utils import Lyterati
-from orcid.orcid import ORCiDWork
+from orcid.orcid import ORCiDWork, ORCiDBatch
 import json
 from dataclasses import asdict
 
@@ -67,6 +67,10 @@ def orcid_works(works, contributors):
         orcid_works.append(ORCiDWork(**work))
     return orcid_works
 
+@pytest.fixture
+def orcid_batch(orcid_works):
+    return ORCiDBatch(user_id, orcid).add_works(orcid_works)
+
 class TestLyterati:
 
     def test_load_files(self, user_id, file_path):
@@ -106,4 +110,4 @@ class TestORCiDWorK:
     
 class TestORCiDBatch:
 
-    
+
