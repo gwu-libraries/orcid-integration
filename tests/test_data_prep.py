@@ -62,8 +62,8 @@ def openalex_work():
 @pytest.fixture
 def orcid_works(works, contributors):
     orcid_works = []
-    for work in works:
-        work.update({'contributors': contributors})
+    for i, work in enumerate(works):
+        work.update({ 'contributors': contributors, '_index': i })
         orcid_works.append(ORCiDWork(**work))
     return orcid_works
 
@@ -109,5 +109,7 @@ class TestORCiDWorK:
         assert orcid_work.contributors[0]['name'] == 'Beatrix Potter'
     
 class TestORCiDBatch:
-
+    
+    def test_create_csv(self, orcid_batch):
+        print(orcid_batch.to_csv().getvalue())
 
