@@ -1,5 +1,6 @@
 from lyterati_utils import Lyterati
 from external_sources import OpenAlexClient
+from orcid import ORCiDWork
 import click
 import json
 import pandas as pd
@@ -7,8 +8,8 @@ import pandas as pd
 @click.command()
 @click.argument('path_to_files')
 @click.argument('user_id')
-def lyterati_to_csv(path_to_files, user_id):
-    '''Given a path to XML Lyterati data files and a user ID, retrieves records for that ID from the XML files, queries OpenAlex for external identifiers, and prepares a CSV of the data.'''
+def lyterati_to_csv(path_to_files, user_id, orcid):
+    '''Given a path to XML Lyterati data files and a user ID/ORCiD, retrieves records for that user ID from the XML files, queries OpenAlex for external identifiers, and prepares a CSV of the data.'''
     # subset of work files
     work_files = ['fis_acad_articles.xml', 'fis_article_abstracts.xml', 'fis_articles.xml', 'fis_books.xml', 'fis_chapters.xml', 'fis_conference_papers.xml', 'fis_presentations.xml', 'fis_reports.xml', 'fis_reviews.xml']
     # move to .env
@@ -30,22 +31,31 @@ def lyterati_to_csv(path_to_files, user_id):
                 ]
     lyterati.update_with_author_ids(author_ids)
     # filter out conference presentations and papers (likely not to have DOI's)
-    lyterati_works = [ record for record in lyterati.user_data 
+    lyterati_for_doi = [ record for record in lyterati.user_data 
                       if record['file_name'] not in ('fis_presentations.xml', 'fis_conference_papers.xml') ]
 
-    titles = [ record['title'] for record in lyterati_works ]
-    years = [ record['start_year'] for record in lyterati_works ]
-    indices = [ record['index'] for record in lyterati_works ]
+    titles, years, indices = zip(*[ ( record['title'], record['start_year'], record['index'] ) for record in lyterati_for_doi ])
     oa_results = [ (index, result) for result, index in zip(open_alex.get_works(author_id=lyterati.author_ids['openalex_id'],
                                                                                 titles=titles,
                                                                                 years=years), indices) if result ]
-    oa_metadata = []
+    oa_works = []
     for index, result in oa_results:
         work = open_alex.extract_metadata(result)
         if work:
-            work['index'] = index
-            oa_metadata.append(work)
+            work['_index'] = index
+            oa_works.append(ORCiDWork.create_from_source(work, 
+                                                         source='open_alex', 
+                                                         user_id=user_id, 
+                                                         orcid=orcid))
+    lyterati_works = [ORCiDWork.create_from_source(work, 
+                                                   source='lyterati', 
+                                                   user_id=user_id, 
+                                                   orcid=orcid, 
+                                                   user_name=lyterati.user_name)
+                                                   for work in lyterati.user_data]
+    lyterati_works.extend(oa_works)
     
+
 
 
     

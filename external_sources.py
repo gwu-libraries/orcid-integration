@@ -1,5 +1,5 @@
 import requests
-from typing import Iterator
+from typing import Iterator, Iterable
 from urllib.error import HTTPError
 import logging
 import re
@@ -46,7 +46,7 @@ class OpenAlexClient:
             logger.error(response.text)
             return None
 
-    def get_works(self, author_id: str, titles: list[str], years: list[str]) -> Iterator[list]:
+    def get_works(self, author_id: str, titles: Iterable[str], years: Iterable[str]) -> Iterator[list]:
         '''
         Retieves OpenAlex metadata, given an OpenAlex author ID and a list of titles and years of publication.
         :param years: should have None or empty string where no year supplied

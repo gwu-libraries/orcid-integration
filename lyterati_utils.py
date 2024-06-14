@@ -37,7 +37,7 @@ class Lyterati:
         '''
         for author_id in author_ids:
             self.author_ids.update({ author_id['id_type']: author_id['id_value'] })
-
+    
     @staticmethod
     def load_data_from_files(user_id: str, 
                   file_path: str, 
@@ -60,7 +60,8 @@ class Lyterati:
                 fields = row.xpath("field")
                 row_dict = {f.get("name"): f.text for f in fields}
                 row_dict.update({"file_name": file.name, 
-                                 'index': index})
+                                 '_index': index})
                 index += 1
                 records.append(row_dict)
         return records
+
