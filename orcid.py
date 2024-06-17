@@ -1,11 +1,12 @@
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Type
+from typing import Optional, Type, Callable
 from jinja2 import Environment, PackageLoader
 from datetime import datetime
 from io import StringIO
 from itertools import groupby
-import re, csv, uuid
+import re, uuid
+import pandas as pd
 
 
 def finalize(value):
@@ -39,6 +40,7 @@ class ORCiDWork:
     url: Optional[str] = None                       # possible URL for work
     _work_id: uuid.UUID = field(default_factory=uuid.uuid4) # internal ID for works; used in creating ORCiD records without DOI's
     _index: Optional[int] = None                    # Used for identifying possible duplicates when creating a sorted list of results
+    _metadata_source: Optional[str] = None          # To indicate the external source for the data (lyterati, open_alex)
 
 
     template = ENV.get_template('work-full-3.0.json') # template for works
@@ -88,7 +90,9 @@ class ORCiDWork:
         authors = re.split(r',|&|\s+with\s+|\s+and\s+', authors_str, flags=re.IGNORECASE)
         # Strip leading/trailing whitespace from each name and convert to title case if necessary
         return [author.strip() for author in authors if author.strip()]
-      
+
+   
+
     @classmethod
     def create_from_source(cls, 
                            record: dict[str, str], 
@@ -125,6 +129,7 @@ class ORCiDWork:
                     orcid_work[orcid_field] = value
                 case _:
                     orcid_work[field] = value
+        orcid_work['_metadata_source'] = source
         return ORCiDWork(**orcid_work)
 
     
@@ -143,7 +148,9 @@ class ORCiDBatch:
     '''
     Class for creating a batch of ORCiD works
     '''
-    csv_fields = [ 'work_number', 'title', 'contributors', 'container', 'pub_year', 'pub_month', 'pub_day', 'work_type', 'doi', 'use_this_version' ]
+    CSV_FIELDS = [ 'work_number', 'title', 'contributors', 'container', 'pub_year', 'pub_month', 'pub_day', 'work_type', 'doi', 'use_this_version', 'metadata_source']
+    # for use in labeling duplicates
+    PREFERRED_METADATA_SOURCE = 'open_alex'
 
     def __init__(self, user_id: str, orcid: str):
         '''
@@ -160,24 +167,38 @@ class ORCiDBatch:
         self.works = works
         return self
     
-    def to_csv(self) -> StringIO:
+    @classmethod
+    def groupby_size_and_label(cls, df: Type[pd.DataFrame]) -> Type[pd.DataFrame]:
         '''
-        Formats the batch of ORCiD works as a CSV. Uses the _index attribute of each work for sorting and flagging duplicates.
+        Helper function to group duplicate works and flag the preferred datasource for duplicates
         '''
-        # Convert ORCiDWOrk instances to dictionaries, sorts using the _index key
-        works_sorted = sorted([ work.to_dict() for work in self.works ], 
-                              key=lambda x: x['_index'])
+        df['size'] = len(df)
+        if len(df) == 1:
+            df['use_this_version'] = True
+        else:
+            df.loc[df._metadata_source == cls.PREFERRED_METADATA_SOURCE, 'use_this_version'] = True
+        return df
+
+    def flatten(self) -> Type[pd.DataFrame]:
+        '''
+        Formats the batch of ORCiD works as a DataFrame. Uses the _index attribute of each work for sorting and flagging duplicates.
+        '''
+        # Create a DataFrame of ORCiDWOrk instances, using the empty string for nulls
+        works_df = pd.DataFrame.from_records([ work.to_dict() for work in self.works ]).fillna('')
+
+        # sort so that duplicates works appear before unduplicated works and label preferred versions
+        # explicitly passing all columns to avoid deprecation warning from pandas about group keys being excluded
+        works_df = works_df.groupby('_index')[works_df.columns].apply(ORCiDBatch.groupby_size_and_label).sort_values('size', ascending=False)
+        works_df = works_df.rename(columns={ 'external_id': 'doi', 
+                                            '_metadata_source': 'metadata_source',
+                                             '_index': 'work_number' })
+        return works_df[ORCiDBatch.CSV_FIELDS]
+
+    def to_csv(self):
+        '''Returns a flattened version of the batch of works as a CSV (string buffer) '''
+        # Buffer for file output
         output = StringIO()
-        writer = csv.writer(output)
-        writer.writerow(ORCiDBatch.csv_fields)
-        for index, rows in groupby(works_sorted, key=lambda x: x['_index']):
-            _rows = list(rows)
-            for row in _rows:
-                row['work_number'] = index
-                row['doi'] = row['external_id']
-                if row['doi'] or (len(_rows) == 1):
-                    row['use_this_version'] = True
-                    writer.writerow([ row[field] for field in ORCiDBatch.csv_fields ])
+        self.flatten().to_csv(output, index=False)
         return output
             
            

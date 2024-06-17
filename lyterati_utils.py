@@ -1,7 +1,6 @@
 from lxml import etree
 from pathlib import Path
 from typing import Optional
-import pandas as pd
 
 class Lyterati:
 

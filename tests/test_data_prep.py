@@ -97,7 +97,7 @@ class TestORCiDWorK:
 
     def test_create_orcid_dict(self, orcid_works):
         for work in orcid_works:
-            assert set(work.to_dict().keys()) == { 'title', 'container', 'contributors', 'work_type', 'pub_year', 'orcid',
+            assert set(work.to_dict().keys()) >= { 'title', 'container', 'contributors', 'work_type', 'pub_year', 'orcid',
                                                   'user_id', 'pub_month', 'pub_day', 'external_id', 'external_id_type', 'external_id_url', 'url', '_work_id', '_index' }
     
     def test_create_oa_work(self, openalex_work, contributors, user_id, orcid):
@@ -107,6 +107,7 @@ class TestORCiDWorK:
         assert orcid_work.work_type == 'journal-article'
         assert orcid_work.orcid == orcid
         assert orcid_work.contributors[0]['name'] == 'Beatrix Potter'
+        assert orcid_work._metadata_source == 'open_alex'
     
 class TestORCiDBatch:
     
