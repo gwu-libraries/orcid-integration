@@ -87,6 +87,9 @@ class ORCiDWork:
     @staticmethod
     def split_authors(authors_str: str) -> list[str]:
         # Split the input string by comma, &, with, and
+        # Return empty string for None
+        if not authors_str:
+            return ''
         authors = re.split(r',|&|\s+with\s+|\s+and\s+', authors_str, flags=re.IGNORECASE)
         # Strip leading/trailing whitespace from each name and convert to title case if necessary
         return [author.strip() for author in authors if author.strip()]
@@ -114,13 +117,10 @@ class ORCiDWork:
                        'orcid': orcid }
         for field, value in record.items():
             match (field, source):
-                case ('filename', 'lyterati'):
-                    orcid_work['work_type'] = cls.LYTERATI_TYPE_MAPPING[value.replace('.xml', '')]
+                case ('file_name', 'lyterati'):
+                    orcid_work['work_type'] = cls.LYTERATI_TYPE_MAPPING[value.replace('fis_', '').replace('.xml', '')]
                 case ('authors', 'lyterati'):
                     contributors =  [{ 'name': name } for name in cls.split_authors(value) ]
-                    # if the Lyterati field is empty, populate with just the Lyterati user's name
-                    if not contributors:
-                        contributors = [{ 'name': f'{user_name["first_name"]} {user_name["last_name"]}' }]
                     orcid_work['contributors'] = contributors
                 case ('work_type', 'open_alex'):
                     orcid_work['work_type'] = cls.OPENALEX_TYPE_MAPPING[value]
@@ -129,6 +129,9 @@ class ORCiDWork:
                     orcid_work[orcid_field] = value
                 case _:
                     orcid_work[field] = value
+        # if the Lyterati field is empty, populate with just the Lyterati user's name
+        if not orcid_work.get('contributors'):
+            orcid_work['contributors'] = [{ 'name': f'{user_name["first_name"]} {user_name["last_name"]}' }]
         orcid_work['_metadata_source'] = source
         return ORCiDWork(**orcid_work)
 
@@ -158,7 +161,7 @@ class ORCiDBatch:
         '''
         self.user_id = user_id
         self.orcid = orcid
-        self.batch_id = f'{datetime.now().isoformat(sep="_", timespec="seconds")}_{self.orcid}'
+        self.batch_id = f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{self.orcid}'
     
     def add_works(self, works: list[Type[ORCiDWork]]):
         '''
@@ -188,10 +191,11 @@ class ORCiDBatch:
 
         # sort so that duplicates works appear before unduplicated works and label preferred versions
         # explicitly passing all columns to avoid deprecation warning from pandas about group keys being excluded
-        works_df = works_df.groupby('_index')[works_df.columns].apply(ORCiDBatch.groupby_size_and_label).sort_values('size', ascending=False)
+        works_df = works_df.groupby('_index')[works_df.columns].apply(ORCiDBatch.groupby_size_and_label)
+
         works_df = works_df.rename(columns={ 'external_id': 'doi', 
                                             '_metadata_source': 'metadata_source',
-                                             '_index': 'work_number' })
+                                             '_index': 'work_number' }).sort_values(['size', 'work_number'], ascending=False)
         return works_df[ORCiDBatch.CSV_FIELDS]
 
     def to_csv(self):

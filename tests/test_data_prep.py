@@ -75,10 +75,10 @@ class TestLyterati:
 
     def test_load_files(self, user_id, file_path):
         lyterati = Lyterati(user_id=user_id, file_path=file_path)
-        assert lyterati.user_data[0]['gw_id'] == user_id
+        assert lyterati.user_data[0]['user_id'] == user_id
         assert len(lyterati.user_data) == 2
         assert lyterati.user_data[1]["title"] == 'Fascinating problems in fascinating literature'
-        assert { k for record in lyterati.user_data for k in record.keys() } == {'gw_id', 'title', 'publisher', 'authors', 'start_year','file_name', '_index'}
+        assert { k for record in lyterati.user_data for k in record.keys() } == {'user_id', 'title', 'publisher', 'authors', 'start_year','file_name', '_index'}
         assert lyterati.user_name == {'first_name': 'Jeremy', 'last_name': 'Fisher'}
 
 class TestORCiDWorK:

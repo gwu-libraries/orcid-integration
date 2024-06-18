@@ -6,6 +6,9 @@ class Lyterati:
 
     parser = etree.XMLParser(recover=True)
 
+    # attribute of the field containing the user ID 
+    ID_FIELD = 'gw_id'
+
     def __init__(self, 
                  user_id: str, 
                  file_path: str = None, 
@@ -54,10 +57,10 @@ class Lyterati:
             if not subset and (file.name == 'fis_faculty.xml'):
                 continue
             doc = etree.parse(file, parser=Lyterati.parser)
-            rows = doc.xpath(f'//row[field/@name="gw_id" and field/text() = "{user_id}"]')
+            rows = doc.xpath(f'//row[field/@name="{Lyterati.ID_FIELD}" and field/text() = "{user_id}"]')
             for row in rows:
                 fields = row.xpath("field")
-                row_dict = {f.get("name"): f.text for f in fields}
+                row_dict = { f.get("name") if (f.get("name") != Lyterati.ID_FIELD) else 'user_id': f.text for f in fields }
                 row_dict.update({"file_name": file.name, 
                                  '_index': index})
                 index += 1

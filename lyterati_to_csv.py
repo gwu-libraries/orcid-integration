@@ -1,6 +1,6 @@
 from lyterati_utils import Lyterati
 from external_sources import OpenAlexClient
-from orcid import ORCiDWork
+from orcid import ORCiDWork, ORCiDBatch
 import click
 import json
 import pandas as pd
@@ -8,6 +8,7 @@ import pandas as pd
 @click.command()
 @click.argument('path_to_files')
 @click.argument('user_id')
+@click.argument('orcid')
 def lyterati_to_csv(path_to_files, user_id, orcid):
     '''Given a path to XML Lyterati data files and a user ID/ORCiD, retrieves records for that user ID from the XML files, queries OpenAlex for external identifiers, and prepares a CSV of the data.'''
     # subset of work files
@@ -34,10 +35,13 @@ def lyterati_to_csv(path_to_files, user_id, orcid):
     lyterati_for_doi = [ record for record in lyterati.user_data 
                       if record['file_name'] not in ('fis_presentations.xml', 'fis_conference_papers.xml') ]
 
-    titles, years, indices = zip(*[ ( record['title'], record['start_year'], record['index'] ) for record in lyterati_for_doi ])
-    oa_results = [ (index, result) for result, index in zip(open_alex.get_works(author_id=lyterati.author_ids['openalex_id'],
-                                                                                titles=titles,
-                                                                                years=years), indices) if result ]
+    titles, years, indices = zip(*[ ( record['title'], record['start_year'], record['_index'] ) for record in lyterati_for_doi ])
+    #oa_results = [ (index, result) for result, index in zip(open_alex.get_works(author_id=lyterati.author_ids['openalex_id'],
+    #                                                                            titles=titles,
+    #                                                                            years=years), indices) if result ]
+    with open('works_data.json') as f:
+        data = json.load(f)
+    oa_results = [ (index, result) for result, index in zip(data, indices) if result ]
     oa_works = []
     for index, result in oa_results:
         work = open_alex.extract_metadata(result)
@@ -47,14 +51,19 @@ def lyterati_to_csv(path_to_files, user_id, orcid):
                                                          source='open_alex', 
                                                          user_id=user_id, 
                                                          orcid=orcid))
-    lyterati_works = [ORCiDWork.create_from_source(work, 
+    orcid_works = [ORCiDWork.create_from_source(work, 
                                                    source='lyterati', 
                                                    user_id=user_id, 
                                                    orcid=orcid, 
                                                    user_name=lyterati.user_name)
                                                    for work in lyterati.user_data]
-    lyterati_works.extend(oa_works)
-    
+    orcid_works.extend(oa_works)
+
+    orcid_batch = ORCiDBatch(user_id, orcid)
+    orcid_batch.add_works(orcid_works)
+    with open(f'{orcid_batch.batch_id}.csv', 'w') as f:
+        f.write(orcid_batch.to_csv().getvalue())
+
 
 
 
