@@ -90,9 +90,9 @@ class ORCiDWork:
         # Return empty string for None
         if not authors_str:
             return ''
-        authors = re.split(r',|&|\s+with\s+|\s+and\s+', authors_str, flags=re.IGNORECASE)
+        authors = re.split(r',|&|\s+with\s+|\(\s*with\s+|\s+and\s+|\(and\s+', authors_str, flags=re.IGNORECASE)
         # Strip leading/trailing whitespace from each name and convert to title case if necessary
-        return [author.strip() for author in authors if author.strip()]
+        return [author.strip().replace(')', '') for author in authors if author.strip()]
 
    
 

@@ -5,31 +5,23 @@
     },
     "subtitle": {
       "value": "{{ work.subtitle }}"
-    },
-    "translated-title": {
-      "value": "{{ work.translated_title }}",
-      "language-code": "{{ work.language_code }}"
     }
   },
   "journal-title": {
     "value": "{{ work.container }}"
   },
   "short-description": "{{ work.description }}",
-  "citation": {
-    "citation-type": "bibtex",
-    "citation-value": "{{ work.citation }}"
-  },
-  "type": " {{ work.work_type }}",
+  "type": "{{ work.work_type }}",
   "publication-date": {
     "year": {
       "value": "{{ work.pub_year }}"
-    },
+    }{% if work.pub_month %},
     "month": {
-      "value": "{{ work.pub_month }}"
-    },
+      "value": "{{ '%02d' % work.pub_month }}"
+    }{%if work.pub_day %},
     "day": {
-      "value": "{{ work.pub_day }}"
-    }
+      "value": "{{ '%02d' % work.pub_day }}"
+    }{% endif %}{% endif %}
   },
   "external-ids": {
     "external-id": [
@@ -60,12 +52,11 @@
           {% endif %}
           "credit-name": {
             "value": "{{ contributor.name }}"
-          },
-          "contributor-email": "{{ contributor.email }}",
+          }{% if contributor.sequence %},
           "contributor-attributes": {
             "contributor-sequence": "{{ contributor.sequence }}",
             "contributor-role": "{{ contributor.role }}"
-          }
+          }{% endif %}
         }{{ ", " if not loop.last else "" }}
       {% endfor %}
     ]
