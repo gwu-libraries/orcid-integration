@@ -3,7 +3,8 @@ from orcid.lyterati_utils import Lyterati
 from orcid.orcid import ORCiDWork, ORCiDBatch
 import json
 from dataclasses import asdict
-
+import requests_mock 
+from orcid.external_sources import OpenAlexClient
 
 @pytest.fixture
 def user_id():
@@ -36,7 +37,8 @@ def works():
             'work_type': 'book',
             'pub_year': '2000',
             'orcid': '9999-9999-9999-9999',
-            'user_id': 'G123456789' },
+            'user_id': 'G123456789',
+             '_metadata_source': 'lyterati' },
             { 'title': 'A fascinating article',
              'container': 'Journal of Fascinating Ideas',
              'work_type': 'article',
@@ -45,19 +47,31 @@ def works():
              'external_id': 'fake-doi-9999',
              'external_id_url': 'https://doi.org/fake-doi-9999',
              'orcid': '9999-9999-9999-9999',
-             'user_id': 'G123456789' }
+             'user_id': 'G123456789',
+              '_metadata_source': 'open_alex' }
             ]
 
 @pytest.fixture
+def openalex_result():
+    with open('./tests/oa_work.json') as f:
+        return json.load(f)
+
+@pytest.fixture
 def openalex_work():
-    return { 'title': 'A fascinating article',
-             'container': 'Journal of Fascinating Ideas',
-             'work_type': 'article',
-             'pub_year': '1994',
+    return { 'title': 'Progress toward more fascinaing journal articles on topics of recurrent fascination',
+             'container': 'arXiv (Cornell University)',
+             'work_type': 'preprint',
+             'pub_year': 2014,
+             'pub_day': 1,
+             'pub_month': 1,
              'external_id_type': 'doi',
-             'external_id': 'fake-doi-9999',
-             'external_id_url': 'https://doi.org/fake-doi-9999',
-             '_index': 1 }
+             'external_id': 'https://doi.org/10.9999/999999',
+             'url': 'https://arxiv.org/abs/99999999999',
+             'contributors': [{ 'name': 'Beatrix Potter', 
+                               'sequence': 'first', 
+                               'orcid': 'https://orcid.org/0000-0000-0000-0000'
+                               }]
+            }
 
 @pytest.fixture
 def orcid_works(works, contributors):
@@ -71,6 +85,17 @@ def orcid_works(works, contributors):
 def orcid_batch(orcid_works):
     return ORCiDBatch(user_id, orcid).add_works(orcid_works)
 
+@pytest.fixture
+def oa_client():
+    gwu_ror = 'https://ror.org/00y4zzh67'
+    email_address = 'dsmith@gwu.edu'
+    return OpenAlexClient(gwu_ror, email_address)
+
+@pytest.fixture
+def orcid_csv():
+    with open('./tests/orcid_to_review.csv') as f:
+        return f.read()
+
 class TestLyterati:
 
     def test_load_files(self, user_id, file_path):
@@ -80,6 +105,19 @@ class TestLyterati:
         assert lyterati.user_data[1]["title"] == 'Fascinating problems in fascinating literature'
         assert { k for record in lyterati.user_data for k in record.keys() } == {'user_id', 'title', 'publisher', 'authors', 'start_year','file_name', '_index'}
         assert lyterati.user_name == {'first_name': 'Jeremy', 'last_name': 'Fisher'}
+    
+class TestOPenAlex:
+
+   
+    def test_open_alex_get_works(self, oa_client, works, openalex_result):
+        with requests_mock.Mocker() as m:
+            m.get(f'{OpenAlexClient.OPEN_ALEX_URL}/works', text=json.dumps(openalex_result))
+            results = [r for r in oa_client.get_works(author_id='12345', titles=[works[0]['title']], years=[works[0]['pub_year']])]
+        assert len(results) == 1
+    
+    def test_open_alex_extract_metadata(self, oa_client, openalex_result, openalex_work):
+        assert oa_client.extract_metadata(openalex_result) == openalex_work
+
 
 class TestORCiDWorK:
 
@@ -100,17 +138,16 @@ class TestORCiDWorK:
             assert set(work.to_dict().keys()) >= { 'title', 'container', 'contributors', 'work_type', 'pub_year', 'orcid',
                                                   'user_id', 'pub_month', 'pub_day', 'external_id', 'external_id_type', 'external_id_url', 'url', '_work_id', '_index' }
     
-    def test_create_oa_work(self, openalex_work, contributors, user_id, orcid):
-        openalex_work.update({ 'contributors': contributors })
+    def test_create_oa_work(self, openalex_work, user_id, orcid):
         orcid_work = ORCiDWork.create_from_source(openalex_work, source='open_alex', user_id=user_id, orcid=orcid)
         assert orcid_work.title == openalex_work['title']
-        assert orcid_work.work_type == 'journal-article'
+        assert orcid_work.work_type == 'preprint'
         assert orcid_work.orcid == orcid
         assert orcid_work.contributors[0]['name'] == 'Beatrix Potter'
         assert orcid_work._metadata_source == 'open_alex'
     
 class TestORCiDBatch:
     
-    def test_create_csv(self, orcid_batch):
-        print(orcid_batch.to_csv().getvalue())
+    def test_create_csv(self, orcid_batch, orcid_csv):
+        assert orcid_batch.to_csv().getvalue() == orcid_csv
 
