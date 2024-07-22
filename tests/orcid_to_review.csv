@@ -1,0 +1,3 @@
+work_number,title,contributors,container,pub_year,pub_month,pub_day,work_type,doi,use_this_version,metadata_source
+1,A fascinating article,Beatrix Potter;Kenneth Grahame,Journal of Fascinating Ideas,1994,,,article,fake-doi-9999,True,open_alex
+0,A fascinating monograph,Beatrix Potter;Kenneth Grahame,Oxfurred University Press,2000,,,book,,True,lyterati
