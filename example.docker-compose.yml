@@ -29,3 +29,17 @@ services:
       - ./config.py:/opt/orcid_integration/config.py
       - ./orcidflask/db:/opt/orcid_integration/orcidflask/db
       #- .:/opt/orcid_integration
+    restart: always
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:1.5
+    environment:
+      - LOG_JSON=true
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      # Note that the nginxproxy image require cert & key to reside in the same directory
+      # And to follow certain naming conventions
+      - /etc/ssl/certs:/etc/nginx/certs
+    restart: always
