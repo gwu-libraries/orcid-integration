@@ -1,6 +1,7 @@
 from lxml import etree
 from pathlib import Path
-from typing import Optional
+import re
+from orcid import ORCiDFuzzyDate, ORCiDContributor
 
 class Lyterati:
 
@@ -92,3 +93,62 @@ class Lyterati:
                 records.append(row_dict)
         return records
 
+
+class LyteratiMapping:
+    
+    # mappinng fields from Lyterati to ORCiD
+    LYTERATI_FIELD_MAPPING = { field: 'journal_title' for field in [ 'publisher',
+                                                                'publication_venue', 
+                                                                'conference', 
+                                                                'event', 
+                                                                'distributor' ]}
+   
+    LYTERATI_TYPE_MAPPING = { 'acad_articles': 'journal-article',
+                             'articles': 'journal-article',
+                             'article_abstracts': 'journal-article',
+                             'books': 'book',
+                             'chapters': 'book-chapter',
+                             'conf_papers': 'conference-paper',
+                             'presentations': 'lecture-speech',
+                             'reports': 'report',
+                             'reviews': 'book-review' }
+        
+    @staticmethod
+    def split_authors(authors_str: str) -> list[str]:
+        # Split the input string by comma, &, with, and
+        # Return empty string for None
+        if not authors_str:
+            return ''
+        authors = re.split(r',|&|\s+with\s+|\(\s*with\s+|\s+and\s+|\(and\s+', authors_str, flags=re.IGNORECASE)
+        # Strip leading/trailing whitespace from each name and convert to title case if necessary
+        return [author.strip().replace(')', '') for author in authors if author.strip()]
+    
+    def to_orcid_work(self, lyterati_work: dict[str, str], user_name: dict[str, str], orcid: str) -> dict[str, str]:
+        '''Maps data from Lyterati fields  to fields used by the ORCiDWork class
+        :param user_name: the Lyterati user's name
+        :param orcid: the Lyterati user's ORCiD '''
+        orcid_work = {}
+        orcid_date = ORCiDFuzzyDate()
+        for field, value in lyterati_work.items():
+            match field:
+                case 'file_name':
+                    orcid_work['_type'] = self.LYTERATI_TYPE_MAPPING[value.replace('fis_', '').replace('.xml', '')]
+                case 'authors':
+                    contributors =  [ORCiDContributor(name) for name in self.split_authors(value) ]
+                    orcid_work['contributors'] = contributors
+                case lyterati_field if lyterati_field in self.LYTERATI_FIELD_MAPPING.keys():
+                    orcid_field = self.LYTERATI_FIELD_MAPPING[lyterati_field]
+                    orcid_work[orcid_field] = value
+                case 'start_month' | 'start_year':
+                    key = field.split('_')[1]
+                    setattr(orcid_date, f'_{key}', value)
+                case 'user_id':
+                    continue
+                case _:
+                    orcid_work[field] = value
+        # if the Lyterati field is empty, populate with just the Lyterati user's name
+        if not orcid_work.get('contributors'):
+            orcid_work['contributors'] = [ORCiDContributor(credit_name=f'{user_name["first_name"]} {user_name["last_name"]}',
+                                           contributor_orcid=orcid)]
+        orcid_work['publication_date'] = orcid_date
+        return orcid_work

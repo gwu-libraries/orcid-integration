@@ -5,6 +5,7 @@ import logging
 import re
 from itertools import tee, filterfalse
 from datetime import datetime as dt
+from orcid import ORCiDFuzzyDate, ORCiDContributor
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
@@ -69,6 +70,29 @@ class OpenAlexClient:
                 logger.error(response.text)
                 yield None
 
+
+
+class OpenAlexMapping:
+
+    # https://api.openalex.org/works?group_by=type
+    OPENALEX_TYPE_MAPPING = { 'article': 'journal-article',
+                             'book-chapter': 'book-chapter',
+                             'book': 'book',
+                             'dataset': 'data-set',
+                             'dissertation': 'disseration',
+                             'preprint': 'preprint',
+                             'reference-entry': 'encyclopaedia-entry',
+                             'review': 'book-review',
+                             'report': 'report',
+                             'other': 'other',
+                             'peer-review': 'review',
+                             'standard': 'standards-and-policy',
+                             'editorial': 'other',
+                             'erratum': 'other',
+                             'letter': 'other',
+                             'supplementary-materials': 'other'   }
+
+    
     def resolve_duplicates(self, items: list[dict]) -> dict:
         '''
         In the case of multiple matches returned by the OpenAlex API, returns one based on the following logic:
@@ -82,16 +106,16 @@ class OpenAlexClient:
             return other[0] 
         return preprints[0]
     
-    def extract_authors(self, authorships: list[dict]) -> list[dict]:
+    def extract_authors(self, authorships: list[dict]) -> Iterator[dict[str, str]]:
         '''Extracts ORCiD-relevant information from the authorships object of an OpenAlex work.'''
-        return [ {'name': authorship['author']['display_name'], 
-                  'sequence': authorship['author_position'], 
-                  'orcid': authorship['author'].get('orcid')
-                  } for authorship in authorships ]
+        for authorship in authorships:
+            yield { 'credit_name': authorship['author']['display_name'], 
+                    'contributor_orcid': authorship['author'].get('orcid')
+                  } 
 
-    def extract_metadata(self, works: dict[str, list]) -> dict:
+    def to_orcid_work(self, works: dict[str, list]) -> dict[str, str]:
         '''
-        Extract work identifiers and other metadata from a set of OpenAlex API works
+        Extract work identifiers and other metadata from a set of OpenAlex API works, converting fields to those used by ORCiD
         '''
         if works and (works['meta']['count'] > 0):
             if len(works['results']) > 2:
@@ -102,16 +126,16 @@ class OpenAlexClient:
             # OpenAlex uses the DOI as the canonical ID for works, so the field should be populated if a DOI is available
             if not work.get('doi'):
                 return
-            container = work.get('primary_location', {}).get('source')
-            if container:
-                container = container.get('display_name', None)
+            source = work.get('primary_location', {}).get('source')
+            if source:
+                source = source.get('display_name', None)
             
-            record = { 'title': work['title'],
-                        'work_type': work['type'],
-                        'container': container,
-                        'pub_date': work['publication_date'],
+            orcid_work = { 'title': work['title'],
+                        '_type': self.OPENALEX_TYPE_MAPPING[work['type']],
+                        'journal_title': source,
+                        'publication_date': ORCiDFuzzyDate.create_from_date(work['publication_date']),
                         'external_id_type': 'doi',
                         'external_id': work['doi'],
                         'url': work['primary_location'].get('landing_page_url') }
-            record['contributors'] = self.extract_authors(work['authorships'])
-            return record
+            orcid_work['contributors'] = ORCiDContributor.add_contributors([contributor for contributor in self.extract_authors(work['authorships'])])
+            return orcid_work
