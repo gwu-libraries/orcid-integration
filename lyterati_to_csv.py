@@ -9,16 +9,13 @@ import pandas as pd
 @click.argument('path_to_files')
 @click.argument('user_id')
 @click.argument('orcid')
-def lyterati_to_csv(path_to_files, user_id, orcid):
+def lyterati_works_to_csv(path_to_files, user_id, orcid):
     '''Given a path to XML Lyterati data files and a user ID/ORCiD, retrieves records for that user ID from the XML files, queries OpenAlex for external identifiers, and prepares a CSV of the data.'''
-    # subset of work files
-    work_files = ['fis_acad_articles.xml', 'fis_article_abstracts.xml', 'fis_articles.xml', 'fis_books.xml', 'fis_chapters.xml', 'fis_conference_papers.xml', 'fis_presentations.xml', 'fis_reports.xml', 'fis_reviews.xml']
-    # move to .env
     gwu_ror = 'https://ror.org/00y4zzh67'
     email_address = 'dsmith@gwu.edu'
-    lyterati = Lyterati(user_id, path_to_files, subset=work_files)
+    lyterati_works = Lyterati(user_id, path_to_files, subset=['work_files'])
     open_alex = OpenAlexClient(gwu_ror, email_address)
-    author_data = open_alex.get_author_ids(' '.join(lyterati.user_name.values()))
+    author_data = open_alex.get_author_ids(' '.join(lyterati_works.user_name.values()))
     # TO DO: 
     # If only one result, use the OpenAlex ID
     # Check ORCiD in results against ORCiD linked to account
@@ -30,10 +27,10 @@ def lyterati_to_csv(path_to_files, user_id, orcid):
                    { 'id_type': 'orcid',
                      'id_value': author_data['results'][0].get('orcid') }
                 ]
-    lyterati.update_with_author_ids(author_ids)
+    lyterati_works.update_with_author_ids(author_ids)
     # filter out conference presentations and papers (likely not to have DOI's)
-    lyterati_for_doi = [ record for record in lyterati.user_data 
-                      if record['file_name'] not in ('fis_presentations.xml', 'fis_conference_papers.xml') ]
+    lyterati_for_doi = [ record for record in lyterati_works.user_data 
+                      if lyterati_works.inverted_file_map[record['file_name']]['use_doi'] ]
 
     titles, years, indices = zip(*[ ( record['title'], record['start_year'], record['_index'] ) for record in lyterati_for_doi ])
     #oa_results = [ (index, result) for result, index in zip(open_alex.get_works(author_id=lyterati.author_ids['openalex_id'],
@@ -55,19 +52,15 @@ def lyterati_to_csv(path_to_files, user_id, orcid):
                                                    source='lyterati', 
                                                    user_id=user_id, 
                                                    orcid=orcid, 
-                                                   user_name=lyterati.user_name)
-                                                   for work in lyterati.user_data]
+                                                   user_name=lyterati_works.user_name)
+                                                   for work in lyterati_works.user_data]
     orcid_works.extend(oa_works)
 
     orcid_batch = ORCiDBatch(user_id, orcid)
     orcid_batch.add_works(orcid_works)
     with open(f'{orcid_batch.batch_id}.csv', 'w') as f:
         f.write(orcid_batch.to_csv().getvalue())
-
-
-
-
-    
+ 
 
 if __name__ == '__main__':
-    lyterati_to_csv()
+    lyterati_works_to_csv()

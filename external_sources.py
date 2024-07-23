@@ -105,14 +105,11 @@ class OpenAlexClient:
             container = work.get('primary_location', {}).get('source')
             if container:
                 container = container.get('display_name', None)
-            work_date = dt.strptime(work['publication_date'], '%Y-%m-%d')
             
             record = { 'title': work['title'],
                         'work_type': work['type'],
                         'container': container,
-                        'pub_year': work['publication_year'],
-                        'pub_month': work_date.month,
-                        'pub_day': work_date.day,
+                        'pub_date': work['publication_date'],
                         'external_id_type': 'doi',
                         'external_id': work['doi'],
                         'url': work['primary_location'].get('landing_page_url') }

@@ -14,13 +14,13 @@
   "type": "{{ work.work_type }}",
   "publication-date": {
     "year": {
-      "value": "{{ work.pub_year }}"
-    }{% if work.pub_month %},
+      "value": "{{ work.pub_date.year }}"
+    }{% if work.pub_date._month %},
     "month": {
-      "value": "{{ '%02d' % work.pub_month }}"
-    }{%if work.pub_day %},
+      "value": "{{ '%02d' % work.pub_date.month }}"
+    }{%if work.pub_date._day %},
     "day": {
-      "value": "{{ '%02d' % work.pub_day }}"
+      "value": "{{ '%02d' % work.pub_date.day }}"
     }{% endif %}{% endif %}
   },
   "external-ids": {
