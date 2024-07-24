@@ -2,25 +2,21 @@
   "title": {
     "title": {
       "value": "{{ work.title }}"
-    },
-    "subtitle": {
-      "value": "{{ work.subtitle }}"
     }
   },
   "journal-title": {
-    "value": "{{ work.container }}"
+    "value": "{{ work.journal_title }}"
   },
-  "short-description": "{{ work.description }}",
-  "type": "{{ work.work_type }}",
+  "type": "{{ work.type }}",
   "publication-date": {
     "year": {
-      "value": "{{ work.pub_date.year }}"
-    }{% if work.pub_date._month %},
+      "value": "{{ work.publication_date.year }}"
+    }{% if work.publication_date.month %},
     "month": {
-      "value": "{{ '%02d' % work.pub_date.month }}"
-    }{%if work.pub_date._day %},
+      "value": "{{ '%02d' % work.publication_date.month }}"
+    }{%if work.publication_date.day %},
     "day": {
-      "value": "{{ '%02d' % work.pub_date.day }}"
+      "value": "{{ '%02d' % work.publication_date.day }}"
     }{% endif %}{% endif %}
   },
   "external-ids": {
@@ -51,11 +47,10 @@
           },
           {% endif %}
           "credit-name": {
-            "value": "{{ contributor.name }}"
+            "value": "{{ contributor.credit_name }}"
           }{% if contributor.sequence %},
           "contributor-attributes": {
-            "contributor-sequence": "{{ contributor.sequence }}",
-            "contributor-role": "{{ contributor.role }}"
+            "contributor-sequence": "{{ contributor.sequence }}"
           }{% endif %}
         }{{ ", " if not loop.last else "" }}
       {% endfor %}

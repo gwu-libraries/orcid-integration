@@ -47,8 +47,7 @@ def openalex_work():
              'journal_title': 'arXiv (Cornell University)',
              '_type': 'preprint',
              'publication_date': ORCiDFuzzyDate.create_from_date('2014-01-01'),
-             'external_id_type': 'doi',
-             'external_id': 'https://doi.org/10.9999/999999',
+             'doi': 'https://doi.org/10.9999/999999',
              'url': 'https://arxiv.org/abs/99999999999',
              'contributors': [ORCiDContributor(**{ 'credit_name': 'Beatrix Potter', 
                                'contributor_sequence': 'first', 
@@ -91,9 +90,7 @@ def works():
              'journal_title': 'Journal of Fascinating Ideas',
              '_type': 'article',
              'publication_date': ORCiDFuzzyDate(year='1994'),
-             'external_id_type': 'doi',
-             'external_id': 'fake-doi-9999',
-             'external_id_url': 'https://doi.org/fake-doi-9999',
+             'doi': 'fake-doi-9999',
              'orcid': '9999-9999-9999-9999',
               '_metadata_source': 'open_alex' }
             ]
@@ -165,7 +162,7 @@ class TestOPenAlexClient:
 class TestOpenAlexMapping:
 
     def test_to_orcid_work(self, openalex_work, orcid_work_from_oa):
-        for key in ['title', 'journal_title', '_type', 'external_id', 'external_id_type', 'url']:
+        for key in ['title', 'journal_title', '_type', 'doi', 'url']:
             assert orcid_work_from_oa[key] == openalex_work[key]
         assert orcid_work_from_oa['publication_date'].year == openalex_work['publication_date'].year
         assert orcid_work_from_oa['contributors'][0].credit_name == openalex_work['contributors'][0].credit_name
@@ -197,7 +194,9 @@ class TestORCidBatch:
     def test_add_works(self, orcid_batch):
         assert len(orcid_batch.works) == 4
         assert max([work._index for work in orcid_batch.works]) == 2
-    
+        assert orcid_batch.works[3].external_id == 'https://doi.org/10.9999/999999'
+        assert orcid_batch.works[2].external_id_type == 'source-work-id'
+
     def test_flatten_works(self, orcid_batch):
         df = orcid_batch.flatten()
         assert len(df.columns) == 11

@@ -134,8 +134,7 @@ class OpenAlexMapping:
                         '_type': self.OPENALEX_TYPE_MAPPING[work['type']],
                         'journal_title': source,
                         'publication_date': ORCiDFuzzyDate.create_from_date(work['publication_date']),
-                        'external_id_type': 'doi',
-                        'external_id': work['doi'],
+                        'doi': work['doi'],
                         'url': work['primary_location'].get('landing_page_url') }
             orcid_work['contributors'] = ORCiDContributor.add_contributors([contributor for contributor in self.extract_authors(work['authorships'])])
             return orcid_work

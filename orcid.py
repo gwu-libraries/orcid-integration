@@ -31,9 +31,7 @@ class ORCiDWork:
     _type: str                                      # ORCiD work type
     publication_date: ORCiDFuzzyDate                # publication date
     orcid: str                                      # The ORCiD associated with the user whose work this is
-    external_id_type: Optional[str] = None          # possible external ID type, from among those recognized by the ORCiD API
-    external_id: Optional[str] = None               # possible external ID, e.g., DOI
-    external_id_url: Optional[str] = None           # possible URL (for DOI)
+    doi: Optional[str] = None                       # DOI for the work
     url: Optional[str] = None                       # possible URL for work
     _work_id: uuid.UUID = field(default_factory=uuid.uuid4) # internal ID for works; used in creating ORCiD records without DOI's
     _index: Optional[int] = None                    # Used for identifying possible duplicates when creating a sorted list of results
@@ -42,6 +40,18 @@ class ORCiDWork:
 
     template = ENV.get_template('work-full-3.0.json') # template for works
     
+    @property 
+    def type(self):
+        return self._type
+    
+    @property
+    def external_id(self):
+        return self.doi if self.doi else self._work_id
+    
+    @property
+    def external_id_type(self):
+        return 'doi' if self.doi else 'source-work-id'
+
     def create_json(self):
        return ORCiDWork.template.render(work=self) 
     
@@ -115,8 +125,7 @@ class ORCiDBatch:
         # explicitly passing all columns to avoid deprecation warning from pandas about group keys being excluded
         works_df = works_df.groupby('_index')[works_df.columns].apply(ORCiDBatch.groupby_size_and_label)
 
-        works_df = works_df.rename(columns={ 'external_id': 'doi', 
-                                            'journal_title': 'publication_source',
+        works_df = works_df.rename(columns={ 'journal_title': 'publication_source',
                                             '_type': 'work_type',
                                             '_metadata_source': 'metadata_source',
                                              '_index': 'work_number' }).sort_values(['size', 'work_number'], ascending=False)
