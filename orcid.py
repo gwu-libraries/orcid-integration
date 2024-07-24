@@ -50,16 +50,16 @@ class ORCiDWork:
         Returns a dictionary representation of an instance, where the instance attributes correspond to columns. Flattens the contributors element, creating semicolon-delimited strings.
         '''
         obj_dict = asdict(self)
-        obj_dict['contributors'] = ';'.join([ c.credit_name for c in obj_dict['contributors'] ])
+        obj_dict['contributors'] = ';'.join([ c['credit_name'] for c in obj_dict['contributors'] ])
         for key in ['year', 'month', 'day']:
-            obj_dict[key] = getattr(obj_dict['publication_date'], key)
+            obj_dict[f'publication_{key}'] = getattr(obj_dict['publication_date'], key)
         return obj_dict        
 
 class ORCiDBatch:
     '''
     Class for creating a batch of ORCiD works
     '''
-    CSV_FIELDS = [ 'work_number', 'title', 'contributors', 'publication_source', 'pub_year', 'pub_month', 'pub_day', 'work_type', 'doi', 'use_this_version', 'metadata_source']
+    CSV_FIELDS = [ 'work_number', 'title', 'contributors', 'publication_source', 'publication_year', 'publication_month', 'publication_day', 'work_type', 'doi', 'use_this_version', 'metadata_source']
     # for use in labeling duplicates
     PREFERRED_METADATA_SOURCE = 'open_alex'
 
@@ -78,19 +78,18 @@ class ORCiDBatch:
         The mapper class should have a to_orcid_work method that accepts the relevant metadata for a single work or result from the external source.'''
         self.mappings[label] = mapping_cls()
     
-    def add_work(self, work: list | dict, mapping: str = None, index: int = -1):
+    def add_work(self, work: list | dict, mapping: str = None, index: int = -1, **kwargs):
         '''
         Creates an instance of an ORCiDWork using the supplied metadata.
         :param mapping: should be a label for a mapping previously registered with the register_mapping method.
         :param index: use if creating a batch from works where duplicate versions exist (duplicates should share the same index)
         '''
         if mapping:
-           orcid_work = self.mappings[mapping].to_orcid_work(work)
-           orcid_work._metadata_source = mapping
-           orcid_work.index = index
+           orcid_work = self.mappings[mapping].to_orcid_work(work, **kwargs)
+           orcid_work.update({'_metadata_source': mapping, '_index': index})
+           self.works.append(ORCiDWork(**orcid_work, orcid=self.orcid))
         else:
-            orcid_work = ORCiDWork(**work)
-        self.works.append(orcid_work)
+            self.works.append(ORCiDWork(**work))
         return self
     
     @classmethod
@@ -118,6 +117,7 @@ class ORCiDBatch:
 
         works_df = works_df.rename(columns={ 'external_id': 'doi', 
                                             'journal_title': 'publication_source',
+                                            '_type': 'work_type',
                                             '_metadata_source': 'metadata_source',
                                              '_index': 'work_number' }).sort_values(['size', 'work_number'], ascending=False)
         return works_df[ORCiDBatch.CSV_FIELDS]

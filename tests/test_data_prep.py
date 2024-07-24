@@ -56,6 +56,16 @@ def openalex_work():
                                })]
             }
 
+@pytest.fixture
+def orcid_works_from_l(orcid, lyterati_works):
+    mapping = LyteratiMapping()
+    return (ORCiDWork(orcid=orcid, **mapping.to_orcid_work(work, lyterati_works.user_name, orcid)) 
+            for work in lyterati_works.user_data)
+
+@pytest.fixture
+def orcid_work_from_oa(openalex_result):
+    oa_mapping = OpenAlexMapping()
+    return oa_mapping.to_orcid_work(openalex_result)
 
 @pytest.fixture
 def author_names():
@@ -98,8 +108,14 @@ def orcid_works(works, contributors):
     return orcid_works
 
 @pytest.fixture
-def orcid_batch(orcid_works):
-    return ORCiDBatch(user_id, orcid).add_works(orcid_works)
+def orcid_batch(lyterati_works, openalex_result, orcid, user_id):
+    orcid_batch = ORCiDBatch(orcid, user_id)
+    orcid_batch.register_mapping(LyteratiMapping, 'lyterati')
+    orcid_batch.register_mapping(OpenAlexMapping, 'open_alex')
+    for i, work in enumerate(lyterati_works.user_data):
+        orcid_batch.add_work(work, mapping='lyterati', index=i, user_name=lyterati_works.user_name, orcid=orcid)
+    orcid_batch.add_work(openalex_result, mapping='open_alex', index=i)
+    return orcid_batch
 
 @pytest.fixture
 def oa_client():
@@ -112,12 +128,11 @@ def orcid_csv():
     with open('./tests/orcid_to_review.csv') as f:
         return f.read()
 
-
 class TestLyterati:
 
     def test_load_work_files(self, lyterati_works, user_id):
         assert lyterati_works.user_data[0]['user_id'] == user_id
-        assert len(lyterati_works.user_data) == 2
+        assert len(lyterati_works.user_data) == 3
         assert lyterati_works.user_data[1]["title"] == 'Fascinating problems in fascinating literature'
         assert { k for record in lyterati_works.user_data for k in record.keys() } == {'user_id', 'title', 'publisher', 'authors', 'start_year','file_name', '_index'}
         assert lyterati_works.user_name == {'first_name': 'Jeremy', 'last_name': 'Fisher'}        
@@ -132,13 +147,12 @@ class TestLyterati:
     
 class TestLyteratiMapping:
 
-    def test_to_orcid_work(self, lyterati_works, orcid):
-        mapping = LyteratiMapping()
-        orcid_work = ORCiDWork(orcid=orcid, **mapping.to_orcid_work(lyterati_works.user_data[0], lyterati_works.user_name, orcid))
-        assert orcid_work.title == 'A fascinating article'
-        assert orcid_work.journal_title == 'Journal of Fascinating Literature'
-        assert orcid_work.contributors[0].credit_name == 'Jeremy Fisher'
-        assert orcid_work.publication_date.year == '2003'
+    def test_to_orcid_work(self, orcid_works_from_l):
+        work = next(orcid_works_from_l)
+        assert work.title == 'A fascinating article'
+        assert work.journal_title == 'Journal of Fascinating Literature'
+        assert work.contributors[0].credit_name == 'Jeremy Fisher'
+        assert work.publication_date.year == '2003'
 
 class TestOPenAlexClient:
    
@@ -150,14 +164,12 @@ class TestOPenAlexClient:
 
 class TestOpenAlexMapping:
 
-    def test_to_orcid_work(self, openalex_result, openalex_work):
-        oa_mapping = OpenAlexMapping()
-        work = oa_mapping.to_orcid_work(openalex_result)
+    def test_to_orcid_work(self, openalex_work, orcid_work_from_oa):
         for key in ['title', 'journal_title', '_type', 'external_id', 'external_id_type', 'url']:
-            assert work[key] == openalex_work[key]
-        assert work['publication_date'].year == openalex_work['publication_date'].year
-        assert work['contributors'][0].credit_name == openalex_work['contributors'][0].credit_name
-        assert work['contributors'][0].contributor_orcid == openalex_work['contributors'][0].contributor_orcid
+            assert orcid_work_from_oa[key] == openalex_work[key]
+        assert orcid_work_from_oa['publication_date'].year == openalex_work['publication_date'].year
+        assert orcid_work_from_oa['contributors'][0].credit_name == openalex_work['contributors'][0].credit_name
+        assert orcid_work_from_oa['contributors'][0].contributor_orcid == openalex_work['contributors'][0].contributor_orcid
     
 class TestORCiDFuzzyDate:
 
@@ -180,28 +192,17 @@ class TestORCiDContributor:
         assert orcid_contribtors[0].contributor_sequence == 'first'
         assert orcid_contribtors[1].contributor_sequence == 'additional'
 
-class TestORCiDWorK:
-    '''
-    def test_create_valid_json(self, orcid_works):
-        for orcid_work in orcid_works:
-            json_work = orcid_work.create_json()
-            assert json.loads(json_work) # tests for valid JSON
- 
-    def test_create_orcid_dict(self, orcid_works):
-        for work in orcid_works:
-            assert set(work.to_dict().keys()) >= { 'title', 'journal_title', 'contributors', '_type', 'publication_date', 'orcid',
-                                                  'user_id', 'external_id', 'external_id_type', 'external_id_url', 'url', '_work_id', '_index' }
+class TestORCidBatch:
+
+    def test_add_works(self, orcid_batch):
+        assert len(orcid_batch.works) == 4
+        assert max([work._index for work in orcid_batch.works]) == 2
     
-    def test_create_oa_work(self, openalex_work, user_id, orcid):
-        orcid_work = ORCiDWork.create_from_source(openalex_work, source='open_alex', user_id=user_id, orcid=orcid)
-        assert orcid_work.title == openalex_work['title']
-        assert orcid_work.work_type == 'preprint'
-        assert orcid_work.orcid == orcid
-        assert orcid_work.contributors[0]['name'] == 'Beatrix Potter'
-        assert orcid_work._metadata_source == 'open_alex'
+    def test_flatten_works(self, orcid_batch):
+        df = orcid_batch.flatten()
+        assert len(df.columns) == 11
+        assert len(df) == 4
+        assert list(df.work_number.values) == [2, 2, 1, 0]
     
-class TestORCiDBatch:
-    
-    def test_create_csv(self, orcid_batch, orcid_csv):
+    def test_to_csv(self, orcid_batch, orcid_csv):
         assert orcid_batch.to_csv().getvalue() == orcid_csv
-    '''
