@@ -51,6 +51,11 @@ class ORCiDWork:
     @property
     def external_id_type(self):
         return 'doi' if self.doi else 'source-work-id'
+    
+    @property
+    def external_id_url(self):
+        if self.doi and self.doi.startswith('https://'):
+            return self.doi
 
     def create_json(self):
        return ORCiDWork.template.render(work=self) 

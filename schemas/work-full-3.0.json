@@ -22,8 +22,8 @@
   "external-ids": {
     "external-id": [
       {
-        "external-id-type": "{{ work.external_id_type if work.external_id_type else 'source-work-id' }}",
-        "external-id-value": "{{ work.external_id if work.external_id else work._work_id }}",
+        "external-id-type": "{{ work.external_id_type }}",
+        "external-id-value": "{{ work.external_id  }}",
 
         "external-id-url": {
           "value": "{{ work.external_id_url }}"
