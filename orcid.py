@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Type, Callable
+from typing import Optional, Type
 from jinja2 import Environment, PackageLoader
 from datetime import datetime
 from io import StringIO
@@ -220,6 +220,15 @@ class ORCiDContributor:
     credit_name: str                        # The contributor's name
     contributor_sequence: str = None        # One of first, additional
     contributor_orcid: str = None           # Contributor's ORCiD, if available
+
+    @property
+    def contributor_orcid_uri(self):
+        if self.contributor_orcid:
+            if not self.contributor_orcid.startswith('https'):
+                return f'https://orcid.org/{self.contributor_orcid}'
+            else:
+                return self.contributor_orcid
+
 
     @classmethod
     def add_contributors(cls, contributors: list[dict[str, str]]) -> list[ORCiDContributor]:
