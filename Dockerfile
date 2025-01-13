@@ -7,6 +7,7 @@ RUN apt-get install -y libxml2-dev libxmlsec1-dev libxmlsec1-openssl build-essen
 
 COPY *.py ./
 COPY requirements.txt .
+COPY migrations ./migrations
 COPY orcidflask/*.py ./orcidflask/
 COPY orcidflask/templates ./orcidflask/templates/
 
