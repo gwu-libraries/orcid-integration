@@ -52,6 +52,7 @@ def index():
         # Get the reason for auth failure if exists
         elif auth.get_settings().is_debug_active():
             error_reason = auth.get_last_error_reason()
+            app.logger.error(error_reason)
 
     # Handle logout
     elif 'sls' in request.args:

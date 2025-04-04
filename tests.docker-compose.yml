@@ -1,0 +1,28 @@
+version: "2"
+services:
+  db:
+    image: postgres:16.2
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=testdb
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    links:
+      - db:db
+    environment:
+      - ORCIDFLASK_SETTINGS=/opt/orcid_integration/tests/config.py
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=testdb
+      - POSTGRES_DB_HOST=db
+      - POSTGRES_PORT=5432
+      - TESTING=true
+    command: "pytest"
+    volumes:
+      - ./tests:/opt/orcid_integration/tests 
+    
