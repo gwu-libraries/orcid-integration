@@ -31,7 +31,8 @@ postgres_db = os.getenv('POSTGRES_DB')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{postgres_user}:{postgres_pwd}@{postgres_db_host}:{postgres_port}/{postgres_db}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db_key_file = os.getenv('DB_ENCRYPTION_FILE')
-app.config['db_encryption_key'] = load_encryption_key(db_key_file)
+if not os.getenv('TESTING'):
+    app.config['db_encryption_key'] = load_encryption_key(db_key_file)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
