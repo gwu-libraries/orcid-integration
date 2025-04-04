@@ -24,6 +24,5 @@ services:
       - TESTING=true
     command: "pytest"
     volumes:
-      - ./config.py:/opt/orcid_integration/config.py
       - ./tests:/opt/orcid_integration/tests 
     
