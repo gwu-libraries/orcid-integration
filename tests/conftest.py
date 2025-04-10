@@ -66,13 +66,14 @@ def runner(test_app):
     return test_app.test_cli_runner()
 
 @pytest.fixture(scope='module')
-def database(client):
+def database(test_app):
 
-    db.drop_all()
-    db.create_all()
+    with test_app.app_context():
+        db.drop_all()
+        db.create_all()
 
-    yield
+        yield
 
-    db.session.remove()
-    db.drop_all()
+        db.session.remove()
+        db.drop_all()
 
