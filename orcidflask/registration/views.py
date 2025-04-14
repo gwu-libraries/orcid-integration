@@ -1,13 +1,17 @@
-from flask import request, url_for, redirect, session, render_template, make_response
-from orcidflask import app, db
-from orcidflask.models import Token
+from flask import request, url_for, redirect, session, render_template, make_response, Blueprint
+from orcidflask.db import db
+from flask import current_app
+from orcidflask.db.models import Token
 from saml_utils import *
 from orcid_utils import *
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 import requests
 from requests.exceptions import HTTPError
 
-@app.route('/', methods=['GET', 'POST'])
+registration = Blueprint('registration', __name__, template_folder='templates', static_folder='static', url_prefix='/')
+
+@registration.route('/', methods=['GET', 'POST'])
+#@app.route('/', methods=['GET', 'POST'])
 def index():
     '''
     Route handles the SSO process
@@ -24,7 +28,9 @@ def index():
     # Initiating the SSO process
     if 'sso' in request.args:
         # Redirect to ORCID login upon successful SSO
-        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited /activities/update', register=register, _external=True, _scheme='https')))
+        #return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited /activities/update', register=register, _external=True, _scheme='https')))
+
+        return redirect(auth.login(return_to=url_for('registration.orcid_login', scopes='/read-limited /activities/update', register=register, _external=True, _scheme='https')))
     # Initiating the SLO process
     elif 'slo' in request.args:
         metadata = get_metadata_from_session(session)
@@ -52,7 +58,7 @@ def index():
         # Get the reason for auth failure if exists
         elif auth.get_settings().is_debug_active():
             error_reason = auth.get_last_error_reason()
-            app.logger.error(error_reason)
+            current_app.logger.error(error_reason)
 
     # Handle logout
     elif 'sls' in request.args:
@@ -73,19 +79,22 @@ def index():
     # Redirect for login if no params provided
     else:
         # Remove the scopes param in order to solicit scopes from users
-        return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited /activities/update', register=register, _external=True, _scheme='https')))
+        return redirect(auth.login(return_to=url_for('registration.orcid_login', scopes='/read-limited /activities/update', register=register, _external=True, _scheme='https')))
+        #return redirect(auth.login(return_to=url_for('orcid_login', scopes='/read-limited /activities/update', register=register, _external=True, _scheme='https')))
 
     # Redirect from logout process
-    return redirect(app.config['SLO_REDIRECT'])
+    return redirect(current_app.config['SLO_REDIRECT'])
 
-@app.route('/attrs/')
+@registration.route('/attrs/')
+#@app.route('/attrs/')
 def attrs():
     attributes, paint_logout = get_attributes(session)
     return render_template('attrs.html', paint_logout=paint_logout,
                            attributes=attributes)
 
 
-@app.route('/metadata/')
+@registration.route('/metadata/')
+#@app.route('/metadata/')
 def metadata():
     auth, auth_req = init_saml_auth(request)
     settings = auth.get_settings()
@@ -100,7 +109,8 @@ def metadata():
     return resp
 
 
-@app.route('/orcid', methods=('GET', 'POST'))
+@registration.route('/orcid', methods=['GET', 'POST'])
+#@app.route('/orcid', methods=('GET', 'POST'))
 def orcid_login():
     '''
     Should render homepage and if behind SSO, retrieve netID from SAML and store in a session variable.
@@ -110,21 +120,23 @@ def orcid_login():
     register = request.args.get('register')
     # If no SAML attributes, redirect for SSO
     if not session.get('samlNameId'):
-        return redirect(url_for('index', _external=True, _scheme='https'))
+        #return redirect(url_for('registration.index', _external=True, _scheme='https'))
+        return redirect(url_for('registration.index', _external=True, _scheme='https'))
     # If the scopes param is part of the request, we're not using the form
     elif scopes or request.method == 'POST':
         # Get the scopes from the form is not part of the URL
         if not scopes:
             scopes = ' '.join(request.form.keys())
         # Get user data from SAML for registration form
-        saml_user_data = extract_saml_user_data(session, populate=app.config['PREFILL_REGISTRATION'])
+        saml_user_data = extract_saml_user_data(session, populate=current_app.config['PREFILL_REGISTRATION'])
         if register == 'True':
-            orcid_auth_url = app.config['orcid_register_url']
+            orcid_auth_url = current_app.config['orcid_register_url']
         else:
-            orcid_auth_url = app.config['orcid_auth_url']
-        return redirect(orcid_auth_url.format(orcid_client_id=app.config['CLIENT_ID'], 
+            orcid_auth_url = current_app.config['orcid_auth_url']
+        return redirect(orcid_auth_url.format(orcid_client_id=current_app.config['CLIENT_ID'], 
                                                         scopes=scopes,
-                                                        redirect_uri=url_for('orcid_redirect',
+                                                        redirect_uri=url_for('registration.orcid_redirect',
+                                                        #redirect_uri=url_for('orcid_redirect',
                                                         _scheme='https', 
                                                         _external=True),
                                                         **saml_user_data))
@@ -132,24 +144,24 @@ def orcid_login():
     else:   
         return render_template('orcid_login.html')
 
-@app.route('/orcid-redirect')
+@registration.route('/orcid-redirect')
 def orcid_redirect():
     '''
     Redirect route that retrieves the one-time code from ORCID after user logs in and approves.
     '''
     # Redirect here for access denied page
     if request.args.get('error') == 'access_denied':
-        return redirect(app.config['ORCID_FAILURE_URL'])
+        return redirect(current_app.config['ORCID_FAILURE_URL'])
     
     elif request.args.get('error'):
-        app.logger.error(f'OAuth Error {request.args.get("error")};')
+        current_app.logger.error(f'OAuth Error {request.args.get("error")};')
         return render_template('oauth_error.html')
         
     orcid_code = request.args.get('code')
     headers = {'Accept': 'application/json',
                 'Content-Type': 'application/x-www-form-urlencoded'}
     try:
-        response = requests.post(app.config['orcid_token_url'], 
+        response = requests.post(current_app.config['orcid_token_url'], 
                                 headers=headers, 
                                 data=prepare_token_payload(orcid_code))
         response.raise_for_status()
@@ -174,4 +186,4 @@ def orcid_redirect():
 
     # return success page - testing only
     #return render_template('orcid_success.html', saml_id=saml_id, orcid_auth={k: v for k,v in orcid_auth.items() if not k.endswith('token')})
-    return redirect(app.config['ORCID_SUCCESS_URL'])
+    return redirect(current_app.config['ORCID_SUCCESS_URL'])

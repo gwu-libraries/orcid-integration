@@ -1,13 +1,15 @@
-from orcidflask import db, app
+from . import db
 from sqlalchemy.sql import func
 from sqlalchemy import TypeDecorator
 from cryptography.fernet import Fernet
+from flask import current_app
+from uuid import uuid1
 
 def fernet_encrypt(data):
     '''
     Encrypts data using the Fernet algorithm with the key set in the app's config object
     '''
-    fernet = Fernet(app.config['db_encryption_key'])
+    fernet = Fernet(current_app.config['db_encryption_key'])
     return fernet.encrypt(data.encode())
 
 
@@ -15,7 +17,7 @@ def fernet_decrypt(data):
     '''
     Decrypts data using the Fernet algorithm with the key set in the app's config object
     '''
-    fernet = Fernet(app.config['db_encryption_key'])
+    fernet = Fernet(current_app.config['db_encryption_key'])
     return fernet.decrypt(data).decode()
 
 class EncryptedValue(TypeDecorator):
@@ -26,6 +28,13 @@ class EncryptedValue(TypeDecorator):
     
     def process_result_value(self, value, dialect):
         return fernet_decrypt(value)
+    
+
+def generate_key():
+    '''
+    Generates a unique indentifier for use as an API key (using the system time)
+    '''
+    return str(uuid1())
 
 
 class Token(db.Model):
@@ -51,3 +60,15 @@ class Token(db.Model):
         # Convert timestamp to string
         record['timestamp'] = record['timestamp'].isoformat()
         return record
+
+class APIKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    api_key = db.Column(db.String(36), unique=True, nullable=False)
+    timestamp = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    # Email address of the user for whom the API key was created
+    userId = db.Column(db.String(80), unique=False, nullable=False)
+
+    @classmethod
+    def check_api_key(cls, api_key: str):
+        '''Checks whether the given key exists in the database.'''
+        return cls.query.filter_by(api_key=api_key).first()

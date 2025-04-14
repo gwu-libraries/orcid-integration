@@ -9,7 +9,9 @@ COPY *.py ./
 COPY requirements.txt .
 COPY migrations ./migrations
 COPY orcidflask/*.py ./orcidflask/
-COPY orcidflask/templates ./orcidflask/templates/
+COPY orcidflask/registration ./orcidflask/registration
+COPY orcidflask/db ./orcidflask/db
+
 
 RUN pip install -r requirements.txt
 

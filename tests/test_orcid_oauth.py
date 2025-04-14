@@ -1,10 +1,10 @@
 import pytest 
-from flask import session, url_for
+from flask import url_for
 from urllib.parse import urlparse, parse_qs
 import responses
 from responses import matchers
 import requests
-from orcidflask.models import Token
+from orcidflask.db.models import Token
 import datetime
 
 @pytest.fixture()
@@ -24,14 +24,14 @@ def auth_code():
 @pytest.fixture()
 def redirect_url(test_app):
     with test_app.app_context():
-        return url_for('orcid_redirect', _external=True, _scheme='https')
+        return url_for('registration.orcid_redirect', _external=True, _scheme='https')
 
 def test_orcid_login(client, user_attributes, test_app):
     with client.session_transaction() as session:
         session['samlUserdata'] = user_attributes.get('samlUserdata')
         session['samlNameId'] = user_attributes.get('samlNameId')
     response = client.get('/orcid', query_string={'scopes': '/read-limited /activities/update', 'register': 'True'})
-    assert response.status_code == 302
+    assert response.status_code == 302  
     redirect = urlparse(response.location)
     query = parse_qs(redirect.query)
     if test_app.config['PREFILL_REGISTRATION']:

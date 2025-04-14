@@ -2,7 +2,13 @@ import pytest
 import os
 from orcid_utils import create_encryption_key
 import json
-from orcidflask import app, db
+from orcidflask import create_app
+from orcidflask.db import db
+from orcidflask.db.models import generate_key
+
+@pytest.fixture(scope='module')
+def encryption_key():
+    return create_encryption_key()
 
 
 @pytest.fixture(scope='module')
@@ -50,9 +56,12 @@ def saml_settings_path(tmpdir_factory, saml_settings):
 
 
 @pytest.fixture(scope='module')
-def test_app(saml_settings_path):
-    app.config.update({'db_encryption_key': create_encryption_key(),
+def test_app(saml_settings_path, encryption_key):
+    app = create_app()
+    app.config.update({'db_encryption_key': encryption_key,
                         'SAML_PATH': saml_settings_path,
+                        'TESTING': True,
+                        'PRESERVE_CONTEXT_ON_EXCEPTION': False
     })
     yield app
 
@@ -61,7 +70,7 @@ def test_app(saml_settings_path):
 def client(test_app):
     return test_app.test_client()
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def runner(test_app):
     return test_app.test_cli_runner()
 
@@ -77,3 +86,20 @@ def database(test_app):
         db.session.remove()
         db.drop_all()
 
+@pytest.fixture(scope='module')
+def test_app_api(encryption_key):
+    app = create_app('api')
+    app.config.update({'db_encryption_key': encryption_key,
+                        'SAML_PATH': saml_settings_path,
+                        'TESTING': True,
+                        'PRESERVE_CONTEXT_ON_EXCEPTION': False
+    })
+    yield app 
+
+@pytest.fixture(scope='module')
+def client_api(test_app_api):
+    return test_app_api.test_client()
+
+@pytest.fixture(scope='module')
+def api_key():
+    return generate_key()
