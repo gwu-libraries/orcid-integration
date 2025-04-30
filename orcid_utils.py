@@ -11,7 +11,7 @@ def prepare_token_payload(code: str):
             'client_secret': app.config['CLIENT_SECRET'],
             'grant_type': 'authorization_code',
             'code': code,
-            'redirect_uri': url_for('orcid_redirect', _external=True, _scheme='https')}
+            'redirect_uri': url_for('registration.orcid_redirect', _external=True, _scheme='https')}
 
 def extract_saml_user_data(session, populate=True):
     '''

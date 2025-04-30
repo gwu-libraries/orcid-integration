@@ -1,2 +1,7 @@
 # Ignore generated files
 **/*.pyc
+config.py
+**/__pycache__
+orcidflask/saml
+.DS_Store
+.git
