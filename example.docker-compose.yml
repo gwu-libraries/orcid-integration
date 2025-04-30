@@ -1,17 +1,22 @@
 version: "2"
 services:
   db:
-    image: postgres
+    image: postgres:16.2
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB} 
+      - POSTGRES_DB=${POSTGRES_DB}
+    user: "1000:1000" 
     volumes:
       - ./data:/var/lib/postgresql/data
+    restart: always
   flask-app:
+    # Use the tagged image in production
+    #image: ghcr.io/gwu-libraries/orcid-integration-flask-app:1.1 
     build:
       context: .
       dockerfile: Dockerfile
+    image: flask-app
     ports:
       - 8080:8080
     links:
@@ -28,11 +33,35 @@ services:
     volumes:
       - ./orcidflask/saml:/opt/orcid_integration/orcidflask/saml
       - ./config.py:/opt/orcid_integration/config.py
-      - ./orcidflask/db:/opt/orcid_integration/orcidflask/db
+      - ./certs/db-encrypt.key:/opt/orcid_integration/db-encrypt.key
+      # Uncomment for use in development
       #- .:/opt/orcid_integration
     restart: always
+  token-api:
+    # Use tagged image in production 
+    #image: ghcr.io/gwu-libraries/orcid-integration-flask-app:1.1 
+    image: flask-app
+    ports:
+      - 8081:8081
+    links:
+      - db:db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_DB_HOST=${POSTGRES_DB_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - DB_ENCRYPTION_FILE=${DB_ENCRYPTION_FILE}
+    volumes:
+      - ./orcidflask/saml:/opt/orcid_integration/orcidflask/saml
+      - ./config.py:/opt/orcid_integration/config.py
+      - ./certs/db-encrypt.key:/opt/orcid_integration/db-encrypt.key
+     # Uncomment for development
+     #- .:/opt/orcid_integration
+    command: gunicorn -b 0.0.0.0:8081 "orcidflask:create_app('api')"
+    restart: always
   nginx-proxy:
-    image: nginxproxy/nginx-proxy:1.5
+    image: nginxproxy/nginx-proxy:1.6.2
     environment:
       - LOG_JSON=true
     ports:
@@ -42,5 +71,5 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       # Note that the nginxproxy image require cert & key to reside in the same directory
       # And to follow certain naming conventions
-      - /etc/ssl/certs:/etc/nginx/certs
+      - ./certs:/etc/nginx/certs
     restart: always

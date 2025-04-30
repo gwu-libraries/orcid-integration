@@ -91,12 +91,12 @@ def serialize_db(file):
     
 
 @click.command('create-api-key')
-@click.argument('userId')
+@click.argument('userid')
 @with_appcontext
-def create_api_key(userId: str):
+def create_api_key(userid: str):
     '''userId should be an email address identifying the user for whom the key is being created.'''
     api_key_str = generate_key()
-    api_key = APIKey(userId=userId, timestamp=dt.now(), api_key=api_key_str)
+    api_key = APIKey(userId=userid, timestamp=dt.now(), api_key=api_key_str)
     db.session.add(api_key)
     db.session.commit()
-    print(f'API key created for user {userId} is {api_key_str}. Please pass this key as a request header when making an API call: Authorization: APikey YOUR_API_KEY')
+    print(f'API key created for user {userid} is {api_key_str}. Please pass this key as a request header when making an API call: Authorization: Apikey YOUR_API_KEY')
