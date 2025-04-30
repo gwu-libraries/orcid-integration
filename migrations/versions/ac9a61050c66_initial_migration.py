@@ -7,7 +7,7 @@ Create Date: 2024-04-26 13:11:48.534267
 """
 from alembic import op
 import sqlalchemy as sa
-from orcidflask.models import EncryptedValue
+from orcidflask.db.models import EncryptedValue
 
 
 # revision identifiers, used by Alembic.
