@@ -10,6 +10,7 @@ COPY requirements.txt .
 COPY migrations ./migrations
 COPY orcidflask/*.py ./orcidflask/
 COPY orcidflask/registration ./orcidflask/registration
+COPY orcidflask/api ./orcidflask/api
 COPY orcidflask/db ./orcidflask/db
 
 
@@ -18,4 +19,4 @@ RUN pip install -r requirements.txt
 ENV FLASK_APP=orcidflask
 ENV ORCIDFLASK_SETTINGS=/opt/orcid_integration/config.py
 
-CMD [ "gunicorn", "-b", "0.0.0.0:8080", "orcidflask:app" ]
+CMD [ "gunicorn", "-b", "0.0.0.0:8080", "orcidflask:create_app()" ]
